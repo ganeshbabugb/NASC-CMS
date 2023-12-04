@@ -1,48 +1,49 @@
 package com.nasc.application.views;
 
-import com.nasc.application.data.User;
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
+import com.nasc.application.data.model.User;
 import com.nasc.application.security.AuthenticatedUser;
 import com.nasc.application.views.about.AboutView;
+import com.nasc.application.views.activeusers.ActiveUsersView;
 import com.nasc.application.views.addressform.AddressFormView;
 import com.nasc.application.views.addressmasterdetail.AddressMasterDetailView;
 import com.nasc.application.views.bankdetailsform.BankDetailsFormView;
+import com.nasc.application.views.createstudents.CreateUsers;
 import com.nasc.application.views.dashboard.DashboardView;
+import com.nasc.application.views.password.PasswordChangeView;
 import com.nasc.application.views.personform.PersonFormView;
+import com.nasc.application.views.professor.ProfessorStatusView;
 import com.nasc.application.views.studentmasterdetails.StudentMasterDetailsView;
 import com.nasc.application.views.studentsstatus.StudentsStatusView;
-import com.nasc.application.views.studentstable.StudentsTableView;
+import com.nasc.application.views.valuevalut.ValueVaultView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.contextmenu.MenuItem;
-import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Header;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.router.PreserveOnRefresh;
 import com.vaadin.flow.server.auth.AccessAnnotationChecker;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import java.io.ByteArrayInputStream;
-import java.util.Optional;
 import org.vaadin.lineawesome.LineAwesomeIcon;
+
+import java.util.Optional;
 
 /**
  * The main view is a top-level placeholder for other views.
  */
+@PreserveOnRefresh
 public class MainLayout extends AppLayout {
 
     private H2 viewTitle;
 
-    private AuthenticatedUser authenticatedUser;
-    private AccessAnnotationChecker accessChecker;
+    private final AuthenticatedUser authenticatedUser;
+    private final AccessAnnotationChecker accessChecker;
 
     public MainLayout(AuthenticatedUser authenticatedUser, AccessAnnotationChecker accessChecker) {
         this.authenticatedUser = authenticatedUser;
@@ -64,12 +65,10 @@ public class MainLayout extends AppLayout {
     }
 
     private void addDrawerContent() {
-        H1 appName = new H1("My App");
+        H1 appName = new H1("NASC");
         appName.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
         Header header = new Header(appName);
-
         Scroller scroller = new Scroller(createNavigation());
-
         addToDrawer(header, scroller, createFooter());
     }
 
@@ -99,6 +98,11 @@ public class MainLayout extends AppLayout {
                     new SideNavItem("Students Status", StudentsStatusView.class, LineAwesomeIcon.TH_SOLID.create()));
 
         }
+        if (accessChecker.hasAccess(ProfessorStatusView.class)) {
+            nav.addItem(
+                    new SideNavItem("Professor Status", ProfessorStatusView.class, LineAwesomeIcon.TH_SOLID.create()));
+
+        }
         if (accessChecker.hasAccess(StudentMasterDetailsView.class)) {
             nav.addItem(new SideNavItem("Student Master Details", StudentMasterDetailsView.class,
                     LineAwesomeIcon.USERS_SOLID.create()));
@@ -109,14 +113,26 @@ public class MainLayout extends AppLayout {
                     LineAwesomeIcon.ADDRESS_CARD.create()));
 
         }
-        if (accessChecker.hasAccess(StudentsTableView.class)) {
+        if (accessChecker.hasAccess(CreateUsers.class)) {
+            nav.addItem(new SideNavItem("Create Users", CreateUsers.class,
+                    FontAwesome.Solid.USER_PLUS.create()));
+        }
+        if (accessChecker.hasAccess(PasswordChangeView.class)) {
+            nav.addItem(new SideNavItem("Change Password", PasswordChangeView.class,
+                    FontAwesome.Solid.USER_LOCK.create()));
+        }
+        if (accessChecker.hasAccess(ValueVaultView.class)) {
             nav.addItem(
-                    new SideNavItem("Students Table", StudentsTableView.class, LineAwesomeIcon.FILTER_SOLID.create()));
+                    new SideNavItem("Value Vault", ValueVaultView.class, FontAwesome.Solid.DATABASE.create()));
+
+        }
+        if (accessChecker.hasAccess(ActiveUsersView.class)) {
+            nav.addItem(
+                    new SideNavItem("Active Users", ActiveUsersView.class, FontAwesome.Solid.DATABASE.create()));
 
         }
         if (accessChecker.hasAccess(AboutView.class)) {
             nav.addItem(new SideNavItem("About", AboutView.class, LineAwesomeIcon.FILE.create()));
-
         }
 
         return nav;
@@ -129,10 +145,15 @@ public class MainLayout extends AppLayout {
         if (maybeUser.isPresent()) {
             User user = maybeUser.get();
 
-            Avatar avatar = new Avatar(user.getName());
+            Avatar avatar = new Avatar(user.getUsername());
+
+/*
+            // Profile icon
             StreamResource resource = new StreamResource("profile-pic",
                     () -> new ByteArrayInputStream(user.getProfilePicture()));
             avatar.setImageResource(resource);
+*/
+
             avatar.setThemeName("xsmall");
             avatar.getElement().setAttribute("tabindex", "-1");
 
@@ -142,13 +163,13 @@ public class MainLayout extends AppLayout {
             MenuItem userName = userMenu.addItem("");
             Div div = new Div();
             div.add(avatar);
-            div.add(user.getName());
+            div.add(user.getUsername() + " [ " + user.getRegisterNumber() + " ]");
             div.add(new Icon("lumo", "dropdown"));
             div.getElement().getStyle().set("display", "flex");
             div.getElement().getStyle().set("align-items", "center");
             div.getElement().getStyle().set("gap", "var(--lumo-space-s)");
             userName.add(div);
-            userName.getSubMenu().addItem("Sign out", e -> {
+            userName.getSubMenu().addItem("log out", e -> {
                 authenticatedUser.logout();
             });
 

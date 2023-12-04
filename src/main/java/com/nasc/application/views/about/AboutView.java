@@ -18,14 +18,14 @@ public class AboutView extends VerticalLayout {
     public AboutView() {
         setSpacing(false);
 
-        Image img = new Image("images/empty-plant.png", "placeholder plant");
+        Image img = new Image("images/NASC_LOGO.jpg", "NASC LOGO");
         img.setWidth("200px");
         add(img);
 
-        H2 header = new H2("This place intentionally left empty");
+        H2 header = new H2("\"Automate the Future\"");
         header.addClassNames(Margin.Top.XLARGE, Margin.Bottom.MEDIUM);
         add(header);
-        add(new Paragraph("It’s a place where you can grow your own UI 🤗"));
+        add(new Paragraph("NASC PORTAL WAS DESIGNED AND DEVELOPED BY DEPARTMENT OF COMPUTER SCIENCE"));
 
         setSizeFull();
         setJustifyContentMode(JustifyContentMode.CENTER);

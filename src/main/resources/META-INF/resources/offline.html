@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta content="ie=edge" http-equiv="X-UA-Compatible"/>
+    <title>Offline | Vaadin CRM</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: sans-serif;
+            color: #555;
+        }
+        .content {
+            width: 80%;
+        }
+        .offline-image {
+            width: 100%;
+            margin: 4em 0px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="content">
+    <img alt="Application Offline" class="offline-image" src="./images/offline.png"/>
+    <h1>Oops! You're currently offline</h1>
+    <p>Your internet connection is not available. Re-establish your connection to continue using NASC CMS.</p>
+    <p>In case of persistent difficulties, kindly contact the CMS administrator for further assistance</p>
+</div>
+<script>
+    window.addEventListener('online', () => window.location.reload());
+</script>
+</body>
+</html>

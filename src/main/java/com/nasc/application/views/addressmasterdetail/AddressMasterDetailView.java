@@ -1,11 +1,14 @@
 package com.nasc.application.views.addressmasterdetail;
 
-import com.nasc.application.data.SampleAddress;
+import com.nasc.application.data.model.AddressDetails;
+import com.nasc.application.services.CountryService;
 import com.nasc.application.services.SampleAddressService;
+import com.nasc.application.services.StateService;
 import com.nasc.application.views.MainLayout;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -14,47 +17,51 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.*;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.RolesAllowed;
-import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
+import java.util.Comparator;
+import java.util.Optional;
+
 @PageTitle("Address Master Detail")
 @Route(value = "student-master-detail/:sampleAddressID?/:action?(edit)", layout = MainLayout.class)
-@RolesAllowed("ADMIN")
-public class AddressMasterDetailView extends Div implements BeforeEnterObserver {
+@RolesAllowed("HOD")
+@Slf4j
+public class AddressMasterDetailView extends Div implements BeforeEnterObserver, BeforeLeaveObserver {
 
     private final String SAMPLEADDRESS_ID = "sampleAddressID";
     private final String SAMPLEADDRESS_EDIT_ROUTE_TEMPLATE = "student-master-detail/%s/edit";
-
-    private final Grid<SampleAddress> grid = new Grid<>(SampleAddress.class, false);
-
-    private TextField street;
-    private TextField postalCode;
+    private final Grid<AddressDetails> grid = new Grid<>(AddressDetails.class, false);
+    private final BeanValidationBinder<AddressDetails> binder;
+    private final CountryService countryService;
+    private final StateService stateService;
+    private TextField username;
     private TextField city;
-    private TextField state;
-    private TextField country;
-
+    private TextField registerNumber;
+    private TextField address;
     private final Button cancel = new Button("Cancel");
     private final Button save = new Button("Save");
-
-    private final BeanValidationBinder<SampleAddress> binder;
-
-    private SampleAddress sampleAddress;
-
+    private TextField pinCode;
+    private Select<String> state;
     private final SampleAddressService sampleAddressService;
+    private Select<String> country;
+    private AddressDetails addressDetails;
 
-    public AddressMasterDetailView(SampleAddressService sampleAddressService) {
+    public AddressMasterDetailView(SampleAddressService sampleAddressService,
+                                   CountryService countryService,
+                                   StateService stateService) {
         this.sampleAddressService = sampleAddressService;
+        this.countryService = countryService;
+        this.stateService = stateService;
         addClassNames("address-master-detail-view");
 
         // Create UI
@@ -66,13 +73,24 @@ public class AddressMasterDetailView extends Div implements BeforeEnterObserver 
         add(splitLayout);
 
         // Configure Grid
-        grid.addColumn("street").setAutoWidth(true);
-        grid.addColumn("postalCode").setAutoWidth(true);
+        grid.addColumn(AddressDetails -> AddressDetails.getUser().getUsername())
+                .setHeader("User Name")
+                .setAutoWidth(true)
+                .setComparator(Comparator.comparing(addressDetails -> addressDetails.getUser().getUsername()));
+
+        grid.addColumn(AddressDetails -> AddressDetails.getUser().getRegisterNumber())
+                .setHeader("Register Number")
+                .setAutoWidth(true)
+                .setComparator(Comparator.comparing(addressDetails1 -> addressDetails1.getUser().getRegisterNumber()));
+
+
+        grid.addColumn("address").setAutoWidth(true);
+        grid.addColumn("pinCode").setAutoWidth(true);
         grid.addColumn("city").setAutoWidth(true);
         grid.addColumn("state").setAutoWidth(true);
         grid.addColumn("country").setAutoWidth(true);
         grid.setItems(query -> sampleAddressService.list(
-                PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
+                        PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
                 .stream());
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
@@ -87,11 +105,16 @@ public class AddressMasterDetailView extends Div implements BeforeEnterObserver 
         });
 
         // Configure Form
-        binder = new BeanValidationBinder<>(SampleAddress.class);
+        binder = new BeanValidationBinder<>(AddressDetails.class);
 
         // Bind fields. This is where you'd define e.g. validation rules
-
         binder.bindInstanceFields(this);
+
+        binder.forField(state)
+                .bind(AddressDetails::getState, AddressDetails::setState);
+
+        binder.forField(country)
+                .bind(AddressDetails::getCountry, AddressDetails::setCountry);
 
         cancel.addClickListener(e -> {
             clearForm();
@@ -100,15 +123,15 @@ public class AddressMasterDetailView extends Div implements BeforeEnterObserver 
 
         save.addClickListener(e -> {
             try {
-                if (this.sampleAddress == null) {
-                    this.sampleAddress = new SampleAddress();
-                }
-                binder.writeBean(this.sampleAddress);
-                sampleAddressService.update(this.sampleAddress);
-                clearForm();
+                binder.writeBean(this.addressDetails);
+                sampleAddressService.update(this.addressDetails);
+
+                UI.getCurrent().navigate(AddressMasterDetailView.class);
+
                 refreshGrid();
                 Notification.show("Data updated");
-                UI.getCurrent().navigate(AddressMasterDetailView.class);
+                clearForm();
+                log.info("Data updated");
             } catch (ObjectOptimisticLockingFailureException exception) {
                 Notification n = Notification.show(
                         "Error updating the data. Somebody else has updated the record while you were making changes.");
@@ -124,7 +147,7 @@ public class AddressMasterDetailView extends Div implements BeforeEnterObserver 
     public void beforeEnter(BeforeEnterEvent event) {
         Optional<Long> sampleAddressId = event.getRouteParameters().get(SAMPLEADDRESS_ID).map(Long::parseLong);
         if (sampleAddressId.isPresent()) {
-            Optional<SampleAddress> sampleAddressFromBackend = sampleAddressService.get(sampleAddressId.get());
+            Optional<AddressDetails> sampleAddressFromBackend = sampleAddressService.get(sampleAddressId.get());
             if (sampleAddressFromBackend.isPresent()) {
                 populateForm(sampleAddressFromBackend.get());
             } else {
@@ -148,12 +171,28 @@ public class AddressMasterDetailView extends Div implements BeforeEnterObserver 
         editorLayoutDiv.add(editorDiv);
 
         FormLayout formLayout = new FormLayout();
-        street = new TextField("Street");
-        postalCode = new TextField("Postal Code");
+        username = new TextField("User Name");
+        registerNumber = new TextField("Register Number");
+        address = new TextField("address");
+        pinCode = new TextField("Postal Code");
         city = new TextField("City");
-        state = new TextField("State");
-        country = new TextField("Country");
-        formLayout.add(street, postalCode, city, state, country);
+
+        state = new Select<>();
+        state.setLabel("State");
+        state.setItems(stateService.getAllStates());
+        state.setPlaceholder("Select State");
+        state.setRequiredIndicatorVisible(true);
+
+        country = new Select<>();
+        country.setLabel("Country");
+        country.setItems(countryService.getAllCountries());
+        country.setPlaceholder("Select Country");
+        country.setRequiredIndicatorVisible(true);
+
+        username.setEnabled(false);
+        registerNumber.setEnabled(false);
+
+        formLayout.add(username, registerNumber, address, pinCode, city, state, country);
 
         editorDiv.add(formLayout);
         createButtonLayout(editorLayoutDiv);
@@ -186,9 +225,45 @@ public class AddressMasterDetailView extends Div implements BeforeEnterObserver 
         populateForm(null);
     }
 
-    private void populateForm(SampleAddress value) {
-        this.sampleAddress = value;
-        binder.readBean(this.sampleAddress);
+    private void populateForm(AddressDetails value) {
+        this.addressDetails = value;
 
+        // Bind the rest of the fields
+        binder.readBean(this.addressDetails);
+
+        // Set values for disabled fields
+        if (value != null && value.getUser() != null) {
+            username.setValue(value.getUser().getUsername());
+            registerNumber.setValue(value.getUser().getRegisterNumber());
+        } else {
+            // Clear values if no addressDetails provided
+            username.clear();
+            registerNumber.clear();
+        }
+    }
+
+    @Override
+    public void beforeLeave(BeforeLeaveEvent event) {
+        // only prevent if certain condition is met. In my example I prevent navigation if binder has changes.
+        if (binder.hasChanges()) {
+
+            // prevents navigation
+            BeforeLeaveEvent.ContinueNavigationAction action = event.postpone();
+
+            // after you prevented the navigation, you are still able to proceed with the navigation, by using action.proceed();
+            // it is good practice IMO to give the user the choice to navigate away anyway, if they wish so.
+            ConfirmDialog dialog = new ConfirmDialog(
+                    "Unsaved Changes",
+                    "You have unsaved changes. Are you sure you want to leave this anyway?",
+                    "Yes", confirmEvent -> {
+                // do the navigation anyway
+                action.proceed();
+            },
+                    "No", cancelEvent -> {
+                // navigation was already prevented with event.postpone() so nothing has to be done here
+            }
+            );
+            dialog.open();
+        }
     }
 }

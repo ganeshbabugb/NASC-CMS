@@ -1,24 +1,33 @@
 package com.nasc.application;
 
-import com.nasc.application.data.SamplePersonRepository;
+import com.nasc.application.data.repository.UserRepository;
 import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
-import javax.sql.DataSource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.sql.init.SqlDataSourceScriptDatabaseInitializer;
 import org.springframework.boot.autoconfigure.sql.init.SqlInitializationProperties;
 import org.springframework.context.annotation.Bean;
 
+import javax.sql.DataSource;
+
 /**
  * The entry point of the Spring Boot application.
- *
+ * <p>
  * Use the @PWA annotation make the application installable on phones, tablets
  * and some desktop browsers.
- *
  */
 @SpringBootApplication
 @Theme(value = "my-app")
+@Slf4j
+@PWA(
+        name = "NASC CMS",
+        shortName = "CMS",
+        offlinePath = "offline.html",
+        offlineResources = {"./images/offline.png"}
+)
 public class Application implements AppShellConfigurator {
 
     public static void main(String[] args) {
@@ -27,11 +36,14 @@ public class Application implements AppShellConfigurator {
 
     @Bean
     SqlDataSourceScriptDatabaseInitializer dataSourceScriptDatabaseInitializer(DataSource dataSource,
-            SqlInitializationProperties properties, SamplePersonRepository repository) {
+                                                                               SqlInitializationProperties properties,
+                                                                               UserRepository repository
+    ) {
         // This bean ensures the database is only initialized when empty
         return new SqlDataSourceScriptDatabaseInitializer(dataSource, properties) {
             @Override
             public boolean initializeDatabase() {
+
                 if (repository.count() == 0L) {
                     return super.initializeDatabase();
                 }

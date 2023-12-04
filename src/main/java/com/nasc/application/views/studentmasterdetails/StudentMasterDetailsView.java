@@ -1,6 +1,6 @@
 package com.nasc.application.views.studentmasterdetails;
 
-import com.nasc.application.data.SamplePerson;
+import com.nasc.application.data.model.SamplePerson;
 import com.nasc.application.services.SamplePersonService;
 import com.nasc.application.views.MainLayout;
 import com.vaadin.flow.component.UI;
@@ -29,9 +29,10 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.RolesAllowed;
-import java.util.Optional;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+
+import java.util.Optional;
 
 @PageTitle("Student Master Details")
 @Route(value = "student-master-details/:samplePersonID?/:action?(edit)", layout = MainLayout.class)
@@ -41,9 +42,7 @@ public class StudentMasterDetailsView extends Div implements BeforeEnterObserver
 
     private final String SAMPLEPERSON_ID = "samplePersonID";
     private final String SAMPLEPERSON_EDIT_ROUTE_TEMPLATE = "student-master-details/%s/edit";
-
     private final Grid<SamplePerson> grid = new Grid<>(SamplePerson.class, false);
-
     private TextField firstName;
     private TextField lastName;
     private TextField email;
@@ -66,6 +65,7 @@ public class StudentMasterDetailsView extends Div implements BeforeEnterObserver
         this.samplePersonService = samplePersonService;
         addClassNames("student-master-details-view");
 
+
         // Create UI
         SplitLayout splitLayout = new SplitLayout();
 
@@ -83,7 +83,7 @@ public class StudentMasterDetailsView extends Div implements BeforeEnterObserver
         grid.addColumn("occupation").setAutoWidth(true);
         grid.addColumn("role").setAutoWidth(true);
         LitRenderer<SamplePerson> importantRenderer = LitRenderer.<SamplePerson>of(
-                "<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
+                        "<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
                 .withProperty("icon", important -> important.isImportant() ? "check" : "minus").withProperty("color",
                         important -> important.isImportant()
                                 ? "var(--lumo-primary-text-color)"
@@ -92,7 +92,7 @@ public class StudentMasterDetailsView extends Div implements BeforeEnterObserver
         grid.addColumn(importantRenderer).setHeader("Important").setAutoWidth(true);
 
         grid.setItems(query -> samplePersonService.list(
-                PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
+                        PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
                 .stream());
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 

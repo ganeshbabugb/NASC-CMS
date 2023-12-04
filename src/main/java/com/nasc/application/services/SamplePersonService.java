@@ -1,12 +1,13 @@
 package com.nasc.application.services;
 
-import com.nasc.application.data.SamplePerson;
-import com.nasc.application.data.SamplePersonRepository;
-import java.util.Optional;
+import com.nasc.application.data.model.SamplePerson;
+import com.nasc.application.data.repository.SamplePersonRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class SamplePersonService {

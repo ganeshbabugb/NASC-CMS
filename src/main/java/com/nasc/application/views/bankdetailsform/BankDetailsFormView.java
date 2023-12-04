@@ -1,122 +1,147 @@
 package com.nasc.application.views.bankdetailsform;
 
+import com.nasc.application.data.model.BankDetails;
+import com.nasc.application.data.model.User;
+import com.nasc.application.services.UserService;
 import com.nasc.application.views.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
+import org.springframework.beans.factory.annotation.Autowired;
+
 
 @PageTitle("Bank Details Form")
 @Route(value = "bank-details-form", layout = MainLayout.class)
-@RolesAllowed("USER")
+@RolesAllowed({"HOD", "PROFESSOR", "STUDENT"})
 public class BankDetailsFormView extends Div {
+    private final TextField accountHolderName = new TextField("Account Holder Name");
+    private final TextField bankName = new TextField("Bank Name");
+    private final TextField accountNumber = new TextField("Account Number");
+    private final TextField ifscCode = new TextField("IFSC Code");
+    private final TextField branchName = new TextField("Branch Name");
+    private final TextField branchAddress = new TextField("Branch Address");
+    private final TextField panNumber = new TextField("Permanent Account Number");
+    private final Button cancel = new Button("Cancel");
+    private final Button submit = new Button("Submit");
+    private final UserService userService;
 
-    private TextField cardNumber;
-    private TextField cardholderName;
-    private Select<Integer> month;
-    private Select<Integer> year;
-    private ExpirationDateField expiration;
-    private PasswordField csc;
-    private Button cancel;
-    private Button submit;
+    @Autowired
+    public BankDetailsFormView(UserService userService) {
+        this.userService = userService;
 
-    /**
-     * Matches Visa, MasterCard, American Express, Diners Club, Discover, and JCB
-     * cards. See https://stackoverflow.com/a/9315696
-     */
-    private String CARD_REGEX = "^(?:4[0-9]{12}(?:[0-9]{3})?|[25][1-7][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35d{3})d{11})$";
-
-    public BankDetailsFormView() {
         addClassName("bank-details-form-view");
+        add(createTitle(), createFormLayout(), createButtonLayout());
 
-        add(createTitle());
-        add(createFormLayout());
-        add(createButtonLayout());
-
-        cancel.addClickListener(e -> {
-            Notification.show("Not implemented");
-        });
+        cancel.addClickListener(e -> Notification.show("Not implemented"));
         submit.addClickListener(e -> {
-            Notification.show("Not implemented");
+            if (isBankDetailsAlreadySaved()) {
+                updateBankDetails();
+            } else {
+                saveBankDetails();
+            }
         });
+
+        initFormWithExistingDetails();
     }
 
     private Component createTitle() {
-        return new H3("Credit Card");
+        return new H3("Bank Account Details");
     }
 
     private Component createFormLayout() {
-        cardNumber = new TextField("Credit card number");
-        cardNumber.setPlaceholder("1234 5678 9123 4567");
-        cardNumber.setPattern(CARD_REGEX);
-        cardNumber.setAllowedCharPattern("[\\d ]");
-        cardNumber.setRequired(true);
-        cardNumber.setErrorMessage("Please enter a valid credit card number");
-
-        cardholderName = new TextField("Cardholder name");
-
-        month = new Select<>();
-        month.setPlaceholder("Month");
-        month.setItems(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
-
-        year = new Select<>();
-        year.setPlaceholder("Year");
-        year.setItems(20, 21, 22, 23, 24, 25);
-
-        expiration = new ExpirationDateField("Expiration date", month, year);
-        csc = new PasswordField("CSC");
-
-        FormLayout formLayout = new FormLayout();
-        formLayout.add(cardNumber, cardholderName, expiration, csc);
-        return formLayout;
+        return new FormLayout(
+                accountHolderName, bankName, accountNumber,
+                ifscCode, branchName, branchAddress, panNumber
+        );
     }
 
     private Component createButtonLayout() {
-        HorizontalLayout buttonLayout = new HorizontalLayout();
-        buttonLayout.addClassName("button-layout");
-
-        submit = new Button("Submit");
         submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-        cancel = new Button("Cancel");
-
-        buttonLayout.add(submit);
-        buttonLayout.add(cancel);
+        HorizontalLayout buttonLayout = new HorizontalLayout(submit, cancel);
+        buttonLayout.addClassName("button-layout");
         return buttonLayout;
     }
 
-    private class ExpirationDateField extends CustomField<String> {
-        public ExpirationDateField(String label, Select<Integer> month, Select<Integer> year) {
-            setLabel(label);
-            HorizontalLayout layout = new HorizontalLayout(month, year);
-            layout.setFlexGrow(1.0, month, year);
-            month.setWidth("100px");
-            year.setWidth("100px");
-            add(layout);
-        }
+    private void initFormWithExistingDetails() {
+        User currentUser = userService.getCurrentUser();
+        BankDetails existingBankDetails = currentUser.getBankDetails();
 
-        @Override
-        protected String generateModelValue() {
-            // Unused as month and year fields part are of the outer class
-            return "";
+        if (existingBankDetails != null) {
+            populateForm(existingBankDetails);
+            submit.setText("Update");
         }
-
-        @Override
-        protected void setPresentationValue(String newPresentationValue) {
-            // Unused as month and year fields part are of the outer class
-        }
-
     }
 
+    private void populateForm(BankDetails bankDetails) {
+        accountHolderName.setValue(bankDetails.getAccountHolderName());
+        bankName.setValue(bankDetails.getBankName());
+        accountNumber.setValue(bankDetails.getAccountNumber());
+        ifscCode.setValue(bankDetails.getIfscCode());
+        branchName.setValue(bankDetails.getBranchName());
+        branchAddress.setValue(bankDetails.getBranchAddress());
+        panNumber.setValue(bankDetails.getPanNumber());
+    }
+
+    private boolean isBankDetailsAlreadySaved() {
+        return userService.getCurrentUser().getBankDetails() != null;
+    }
+
+    private void saveBankDetails() {
+        User currentUser = userService.getCurrentUser();
+        BankDetails newBankDetails = createBankDetailsFromForm();
+
+        // Associate bank details with the current user
+        newBankDetails.setUser(currentUser);
+
+        // Set the new bank details to the current user
+        currentUser.setBankDetails(newBankDetails);
+
+        // Save the user with bank details
+        userService.saveUserWithBankDetails(currentUser, newBankDetails);
+
+        Notification.show("Bank details saved successfully");
+    }
+
+    private void updateBankDetails() {
+        User currentUser = userService.getCurrentUser();
+        BankDetails existingBankDetails = currentUser.getBankDetails();
+
+        // Print values before update
+        System.out.println("Before Update: " + existingBankDetails);
+
+        // Update existing bank details
+        existingBankDetails.setAccountHolderName(accountHolderName.getValue());
+        existingBankDetails.setBankName(bankName.getValue());
+        existingBankDetails.setAccountNumber(accountNumber.getValue());
+        existingBankDetails.setIfscCode(ifscCode.getValue());
+        existingBankDetails.setBranchName(branchName.getValue());
+        existingBankDetails.setBranchAddress(branchAddress.getValue());
+        existingBankDetails.setPanNumber(panNumber.getValue());
+
+        // Save the user with updated bank details
+        userService.saveUserWithBankDetails(currentUser, existingBankDetails);
+
+        Notification.show("Bank details updated successfully");
+    }
+
+    private BankDetails createBankDetailsFromForm() {
+        BankDetails bankDetails = new BankDetails();
+        bankDetails.setAccountHolderName(accountHolderName.getValue());
+        bankDetails.setBankName(bankName.getValue());
+        bankDetails.setAccountNumber(accountNumber.getValue());
+        bankDetails.setIfscCode(ifscCode.getValue());
+        bankDetails.setBranchName(branchName.getValue());
+        bankDetails.setBranchAddress(branchAddress.getValue());
+        bankDetails.setPanNumber(panNumber.getValue());
+        return bankDetails;
+    }
 }

@@ -1,53 +1,114 @@
 package com.nasc.application.views.studentsstatus;
 
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
+import com.nasc.application.data.model.AcademicYearEntity;
+import com.nasc.application.data.model.Role;
+import com.nasc.application.data.model.User;
+import com.nasc.application.services.AcademicYearService;
+import com.nasc.application.services.UserService;
 import com.nasc.application.views.MainLayout;
+import com.opencsv.CSVWriter;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.HasValue;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
-import com.vaadin.flow.component.gridpro.GridPro;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.renderer.LocalDateRenderer;
-import com.vaadin.flow.data.renderer.NumberRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.StreamResource;
 import jakarta.annotation.security.RolesAllowed;
-import java.text.NumberFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
 import org.apache.commons.lang3.StringUtils;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 @PageTitle("Students Status")
 @Route(value = "students-status", layout = MainLayout.class)
-@RolesAllowed("ADMIN")
-public class StudentsStatusView extends Div {
+@RolesAllowed({"HOD", "PROFESSOR"})
+public class StudentsStatusView extends VerticalLayout {
+    private static final int NOTIFICATION_DURATION = 3000;
+    private final UserService userService;
+    private final AcademicYearService academicYearService;
+    private final Button menuButton = new Button("Show/Hide", FontAwesome.Solid.LIST_CHECK.create());
+    private final Anchor downloadLink;
+    private final ColumnToggleContextMenu columnToggleContextMenu = new ColumnToggleContextMenu(menuButton);
+    private Grid<User> grid;
+    private GridListDataView<User> gridListDataView;
+    private Grid.Column<User> userColumn;
+    private ComboBox<AcademicYearEntity> academicYearFilter;
 
-    private GridPro<Client> grid;
-    private GridListDataView<Client> gridListDataView;
-
-    private Grid.Column<Client> clientColumn;
-    private Grid.Column<Client> amountColumn;
-    private Grid.Column<Client> statusColumn;
-    private Grid.Column<Client> dateColumn;
-
-    public StudentsStatusView() {
+    public StudentsStatusView(UserService service, AcademicYearService academicYearService) {
+        this.userService = service;
+        this.academicYearService = academicYearService;
         addClassName("students-status-view");
         setSizeFull();
+        createAcademicYearFilterComponent();
+        HorizontalLayout exportAndColumnListLayout = createExportAndColumnListLayout();
         createGrid();
-        add(grid);
+        downloadLink = createDownloadLink();
+        exportAndColumnListLayout.add(menuButton, downloadLink);
+        add(academicYearFilter, exportAndColumnListLayout, grid);
+    }
+
+    private static FontAwesome.Regular.Icon getThumbsUpIcon() {
+        FontAwesome.Regular.Icon icon = FontAwesome.Regular.THUMBS_UP.create();
+        icon.getStyle().set("padding", "var(--lumo-space-xs");
+        return icon;
+    }
+
+    private static FontAwesome.Regular.Icon getThumbsDownIcon() {
+        FontAwesome.Regular.Icon icon = FontAwesome.Regular.THUMBS_DOWN.create();
+        icon.getStyle().set("padding", "var(--lumo-space-xs");
+        return icon;
+    }
+
+    private HorizontalLayout createExportAndColumnListLayout() {
+        HorizontalLayout layout = new HorizontalLayout();
+        layout.setWidthFull();
+        layout.setJustifyContentMode(JustifyContentMode.END);
+        layout.setAlignItems(Alignment.CENTER);
+        return layout;
+    }
+
+    private Anchor createDownloadLink() {
+        Anchor link = new Anchor();
+        link.getElement().setAttribute("download", true);
+        Button exportButton = new Button("Export to CSV", FontAwesome.Solid.FILE_EXPORT.create());
+        link.add(exportButton);
+        return link;
+    }
+
+    private void createAcademicYearFilterComponent() {
+        ComboBox<AcademicYearEntity> filter = new ComboBox<>();
+        filter.setPlaceholder("Filter by Academic Year");
+        filter.setClearButtonVisible(false);
+        filter.setItems(academicYearService.findAll());
+        filter.setItemLabelGenerator(this::generateAcademicYearLabel);
+        filter.addValueChangeListener(this::handleAcademicYearFilterChange);
+        academicYearFilter = filter;
     }
 
     private void createGrid() {
@@ -56,148 +117,316 @@ public class StudentsStatusView extends Div {
         addFiltersToGrid();
     }
 
-    private void createGridComponent() {
-        grid = new GridPro<>();
-        grid.setSelectionMode(SelectionMode.MULTI);
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_COLUMN_BORDERS);
-        grid.setHeight("100%");
-
-        List<Client> clients = getClients();
-        gridListDataView = grid.setItems(clients);
+    private String generateAcademicYearLabel(AcademicYearEntity academicYear) {
+        return academicYear.getStartYear() + " - " + academicYear.getEndYear();
     }
 
-    private void addColumnsToGrid() {
-        createClientColumn();
-        createAmountColumn();
-        createStatusColumn();
-        createDateColumn();
-    }
-
-    private void createClientColumn() {
-        clientColumn = grid.addColumn(new ComponentRenderer<>(client -> {
-            HorizontalLayout hl = new HorizontalLayout();
-            hl.setAlignItems(Alignment.CENTER);
-            Image img = new Image(client.getImg(), "");
-            Span span = new Span();
-            span.setClassName("name");
-            span.setText(client.getClient());
-            hl.add(img, span);
-            return hl;
-        })).setComparator(client -> client.getClient()).setHeader("Client");
-    }
-
-    private void createAmountColumn() {
-        amountColumn = grid
-                .addEditColumn(Client::getAmount,
-                        new NumberRenderer<>(client -> client.getAmount(), NumberFormat.getCurrencyInstance(Locale.US)))
-                .text((item, newValue) -> item.setAmount(Double.parseDouble(newValue)))
-                .setComparator(client -> client.getAmount()).setHeader("Amount");
-    }
-
-    private void createStatusColumn() {
-        statusColumn = grid.addEditColumn(Client::getClient, new ComponentRenderer<>(client -> {
-            Span span = new Span();
-            span.setText(client.getStatus());
-            span.getElement().setAttribute("theme", "badge " + client.getStatus().toLowerCase());
-            return span;
-        })).select((item, newValue) -> item.setStatus(newValue), Arrays.asList("Pending", "Success", "Error"))
-                .setComparator(client -> client.getStatus()).setHeader("Status");
-    }
-
-    private void createDateColumn() {
-        dateColumn = grid
-                .addColumn(new LocalDateRenderer<>(client -> LocalDate.parse(client.getDate()),
-                        () -> DateTimeFormatter.ofPattern("M/d/yyyy")))
-                .setComparator(client -> client.getDate()).setHeader("Date").setWidth("180px").setFlexGrow(0);
+    private void handleAcademicYearFilterChange(HasValue.ValueChangeEvent<AcademicYearEntity> event) {
+        refreshGridData();
     }
 
     private void addFiltersToGrid() {
         HeaderRow filterRow = grid.appendHeaderRow();
 
-        TextField clientFilter = new TextField();
-        clientFilter.setPlaceholder("Filter");
-        clientFilter.setClearButtonVisible(true);
-        clientFilter.setWidth("100%");
-        clientFilter.setValueChangeMode(ValueChangeMode.EAGER);
-        clientFilter.addValueChangeListener(event -> gridListDataView
-                .addFilter(client -> StringUtils.containsIgnoreCase(client.getClient(), clientFilter.getValue())));
-        filterRow.getCell(clientColumn).setComponent(clientFilter);
+        // Username filter
+        TextField userFilter = createTextFilter();
+        userFilter.addValueChangeListener(event -> gridListDataView
+                .addFilter(user -> StringUtils.containsIgnoreCase(user.getUsername(), userFilter.getValue())));
+        filterRow.getCell(userColumn).setComponent(userFilter);
 
-        TextField amountFilter = new TextField();
-        amountFilter.setPlaceholder("Filter");
-        amountFilter.setClearButtonVisible(true);
-        amountFilter.setWidth("100%");
-        amountFilter.setValueChangeMode(ValueChangeMode.EAGER);
-        amountFilter.addValueChangeListener(event -> gridListDataView.addFilter(client -> StringUtils
-                .containsIgnoreCase(Double.toString(client.getAmount()), amountFilter.getValue())));
-        filterRow.getCell(amountColumn).setComponent(amountFilter);
+        // Status filters
+        addStatusFilter("Personal Details", "personalDetailsCompleted", filterRow);
+        addStatusFilter("Address Details", "addressDetailsCompleted", filterRow);
+        addStatusFilter("Bank Details", "bankDetailsCompleted", filterRow);
 
+        ComboBox<String> allFormsFilter = createAllFormsFilter();
+        allFormsFilter.addValueChangeListener(this::handleAllFormsFilterChange);
+        filterRow.getCell(grid.getColumnByKey("allFormsCompleted")).setComponent(allFormsFilter);
+    }
+
+    private TextField createTextFilter() {
+        TextField filter = new TextField();
+        filter.setPlaceholder("Filter");
+        filter.setClearButtonVisible(true);
+        filter.setWidth("100%");
+        filter.setValueChangeMode(ValueChangeMode.EAGER);
+        return filter;
+    }
+
+    private void addStatusFilter(String columnName, String propertyKey, HeaderRow filterRow) {
+        ComboBox<String> statusFilter = createStatusFilter();
+        statusFilter.addValueChangeListener(event -> handleStatusFilterChange(event, columnName));
+        filterRow.getCell(grid.getColumnByKey(propertyKey)).setComponent(statusFilter);
+    }
+
+    private ComboBox<String> createStatusFilter() {
         ComboBox<String> statusFilter = new ComboBox<>();
-        statusFilter.setItems(Arrays.asList("Pending", "Success", "Error"));
+        statusFilter.setItems(Arrays.asList("Pending", "Success"));
         statusFilter.setPlaceholder("Filter");
         statusFilter.setClearButtonVisible(true);
         statusFilter.setWidth("100%");
-        statusFilter.addValueChangeListener(
-                event -> gridListDataView.addFilter(client -> areStatusesEqual(client, statusFilter)));
-        filterRow.getCell(statusColumn).setComponent(statusFilter);
-
-        DatePicker dateFilter = new DatePicker();
-        dateFilter.setPlaceholder("Filter");
-        dateFilter.setClearButtonVisible(true);
-        dateFilter.setWidth("100%");
-        dateFilter.addValueChangeListener(
-                event -> gridListDataView.addFilter(client -> areDatesEqual(client, dateFilter)));
-        filterRow.getCell(dateColumn).setComponent(dateFilter);
+        return statusFilter;
     }
 
-    private boolean areStatusesEqual(Client client, ComboBox<String> statusFilter) {
-        String statusFilterValue = statusFilter.getValue();
-        if (statusFilterValue != null) {
-            return StringUtils.equals(client.getStatus(), statusFilterValue);
+    private void handleStatusFilterChange(HasValue.ValueChangeEvent<String> event, String columnName) {
+        String filterValue = event.getValue();
+        gridListDataView.removeFilters(); //Every Time Drop Down Change, It removes filters from grid.
+        if (StringUtils.isBlank(filterValue)) {
+            gridListDataView.removeFilters();
+        } else {
+            gridListDataView.addFilter(user -> areStatusesEqual(user, columnName, filterValue));
         }
-        return true;
     }
 
-    private boolean areDatesEqual(Client client, DatePicker dateFilter) {
-        LocalDate dateFilterValue = dateFilter.getValue();
-        if (dateFilterValue != null) {
-            LocalDate clientDate = LocalDate.parse(client.getDate());
-            return dateFilterValue.equals(clientDate);
+    private boolean areStatusesEqual(User user, String columnName, String filterValue) {
+        switch (columnName) {
+            case "Personal Details" -> {
+                return Boolean.TRUE.equals(user.getPersonalDetailsCompleted()) &&
+                        filterValue.equals("Success") || Boolean.FALSE.equals(user.getPersonalDetailsCompleted()) &&
+                        filterValue.equals("Pending");
+            }
+            case "Address Details" -> {
+                return Boolean.TRUE.equals(user.getAddressDetailsCompleted()) &&
+                        filterValue.equals("Success") || Boolean.FALSE.equals(user.getAddressDetailsCompleted()) &&
+                        filterValue.equals("Pending");
+            }
+            case "Bank Details" -> {
+                return Boolean.TRUE.equals(user.getBankDetailsCompleted()) &&
+                        filterValue.equals("Success") || Boolean.FALSE.equals(user.getBankDetailsCompleted()) &&
+                        filterValue.equals("Pending");
+            }
+            default -> {
+                return true;
+            }
         }
-        return true;
     }
 
-    private List<Client> getClients() {
-        return Arrays.asList(
-                createClient(4957, "https://randomuser.me/api/portraits/women/42.jpg", "Amarachi Nkechi", 47427.0,
-                        "Success", "2019-05-09"),
-                createClient(675, "https://randomuser.me/api/portraits/women/24.jpg", "Bonelwa Ngqawana", 70503.0,
-                        "Success", "2019-05-09"),
-                createClient(6816, "https://randomuser.me/api/portraits/men/42.jpg", "Debashis Bhuiyan", 58931.0,
-                        "Success", "2019-05-07"),
-                createClient(5144, "https://randomuser.me/api/portraits/women/76.jpg", "Jacqueline Asong", 25053.0,
-                        "Pending", "2019-04-25"),
-                createClient(9800, "https://randomuser.me/api/portraits/men/24.jpg", "Kobus van de Vegte", 7319.0,
-                        "Pending", "2019-04-22"),
-                createClient(3599, "https://randomuser.me/api/portraits/women/94.jpg", "Mattie Blooman", 18441.0,
-                        "Error", "2019-04-17"),
-                createClient(3989, "https://randomuser.me/api/portraits/men/76.jpg", "Oea Romana", 33376.0, "Pending",
-                        "2019-04-17"),
-                createClient(1077, "https://randomuser.me/api/portraits/men/94.jpg", "Stephanus Huggins", 75774.0,
-                        "Success", "2019-02-26"),
-                createClient(8942, "https://randomuser.me/api/portraits/men/16.jpg", "Torsten Paulsson", 82531.0,
-                        "Pending", "2019-02-21"));
+    private ComboBox<String> createAllFormsFilter() {
+        ComboBox<String> allFormsFilter = new ComboBox<>();
+        allFormsFilter.setItems(Arrays.asList("Complete", "Incomplete"));
+        allFormsFilter.setPlaceholder("Filter");
+        allFormsFilter.setClearButtonVisible(true);
+        allFormsFilter.setWidth("100%");
+        return allFormsFilter;
     }
 
-    private Client createClient(int id, String img, String client, double amount, String status, String date) {
-        Client c = new Client();
-        c.setId(id);
-        c.setImg(img);
-        c.setClient(client);
-        c.setAmount(amount);
-        c.setStatus(status);
-        c.setDate(date);
-
-        return c;
+    private void handleAllFormsFilterChange(HasValue.ValueChangeEvent<String> event) {
+        String filterValue = event.getValue();
+        gridListDataView.removeFilters(); // Every Time Drop Down Change, It removes filters from the grid.
+        if (StringUtils.isBlank(filterValue)) {
+            gridListDataView.removeFilters();
+        } else {
+            gridListDataView.addFilter(user -> areAllFormsComplete(user, filterValue));
+        }
     }
-};
+
+    private boolean areAllFormsComplete(User user, String filterValue) {
+        boolean allFormsComplete = user.isFormsCompleted();
+        return (allFormsComplete && "Complete".equalsIgnoreCase(filterValue)) ||
+                (!allFormsComplete && "Incomplete".equalsIgnoreCase(filterValue));
+    }
+
+    private void createGridComponent() {
+        grid = new Grid<>();
+        grid.setHeight("100%");
+        grid.addThemeVariants(GridVariant.LUMO_COMPACT);
+    }
+
+    private void refreshGridData() {
+        AcademicYearEntity academicYearEntity = academicYearFilter.getValue();
+        if (academicYearEntity != null) {
+            List<User> users = getUsersByRoleForLoggedInUserDepartment(academicYearEntity);
+            if (users.isEmpty()) {
+                if (users.isEmpty()) {
+                    showNotification(
+                            "No information recorded for the selected academic year",
+                            NOTIFICATION_DURATION,
+                            NotificationVariant.LUMO_WARNING, Notification.Position.BOTTOM_END
+                    );
+                }
+            }
+            gridListDataView = grid.setItems(users);
+            exportToCSV(users);
+        }
+    }
+
+    private void addColumnsToGrid() {
+        createUsernameColumn();
+        createPersonalDetailsColumn();
+        createAddressDetailsColumn();
+        createBankDetailsColumn();
+        createAllFormsCompletedColumn();
+    }
+
+    private void createUsernameColumn() {
+        userColumn = grid.addColumn(User::getUsername).setHeader("Username").setKey("username").setComparator((User::getUsername));
+    }
+
+    private void createPersonalDetailsColumn() {
+        Grid.Column<User> personalDetailsColumn = grid.addColumn(new ComponentRenderer<>(user -> {
+            Span span = new Span(user.getPersonalDetailsCompleted() ? createIcon(VaadinIcon.CHECK) : createIcon(VaadinIcon.CLOCK),
+                    new Span(user.getPersonalDetailsCompleted() ? "Success" : "Pending"));
+            span.getElement().setAttribute("theme", "badge " + (user.getPersonalDetailsCompleted() ? "success" : "pending"));
+            return span;
+        })).setHeader("Personal Details").setKey("personalDetailsCompleted").setComparator(User::getUsername);
+        columnToggleContextMenu.addColumnToggleItem("Personal Details Completed", personalDetailsColumn);
+    }
+
+    private void createAddressDetailsColumn() {
+        Grid.Column<User> addressDetailsColumn = grid.addColumn(new ComponentRenderer<>(user -> {
+            Span span = new Span(user.getAddressDetailsCompleted() ? createIcon(VaadinIcon.CHECK) : createIcon(VaadinIcon.CLOCK),
+                    new Span(user.getAddressDetailsCompleted() ? "Success" : "Pending"));
+            span.getElement().setAttribute("theme", "badge " + (user.getAddressDetailsCompleted() ? "success" : "pending"));
+            return span;
+        })).setHeader("Address Details").setKey("addressDetailsCompleted").setComparator(User::getUsername);
+        columnToggleContextMenu.addColumnToggleItem("Address Details Completed", addressDetailsColumn);
+    }
+
+    private void createBankDetailsColumn() {
+        Grid.Column<User> bankDetailsColumn = grid.addColumn(new ComponentRenderer<>(user -> {
+            Span span = new Span(user.getBankDetailsCompleted() ? createIcon(VaadinIcon.CHECK) : createIcon(VaadinIcon.CLOCK),
+                    new Span(user.getBankDetailsCompleted() ? "Success" : "Pending"));
+            span.getElement().setAttribute("theme", "badge " + (user.getBankDetailsCompleted() ? "success" : "pending"));
+            return span;
+        })).setHeader("Bank Details").setKey("bankDetailsCompleted").setComparator(User::getUsername);
+        columnToggleContextMenu.addColumnToggleItem("Bank Details", bankDetailsColumn);
+    }
+
+    private void createAllFormsCompletedColumn() {
+        Grid.Column<User> allFormsCompletedColumn = grid.addColumn(new ComponentRenderer<>(user -> {
+            boolean allFormsCompleted = user.isFormsCompleted();
+            Span span = new Span(allFormsCompleted ? getThumbsUpIcon() : getThumbsDownIcon(),
+                    new Span(allFormsCompleted ? "Complete" : "Incomplete"));
+            span.getElement().setAttribute("theme", "badge " + (allFormsCompleted ? "success" : "error"));
+            return span;
+        })).setHeader("All Forms Completed").setKey("allFormsCompleted").setComparator(User::getUsername);
+        columnToggleContextMenu.addColumnToggleItem("All Forms Completed", allFormsCompletedColumn);
+    }
+
+    private List<User> getUsersByRoleForLoggedInUserDepartment(AcademicYearEntity value) {
+        return userService.findUsersByDepartmentAndRoleAndAcademicYear(Role.STUDENT, value);
+    }
+
+    private Icon createIcon(VaadinIcon vaadinIcon) {
+        Icon icon = vaadinIcon.create();
+        icon.getStyle().set("padding", "var(--lumo-space-xs");
+        return icon;
+    }
+
+    private void exportToCSV(List<User> users) {
+
+        try {
+            AcademicYearEntity academicYearEntity = academicYearFilter.getValue();
+            // Prepare data for export
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+            try (CSVWriter csvWriter = new CSVWriter(new OutputStreamWriter(byteArrayOutputStream, StandardCharsets.UTF_8))) {
+
+                // Write header
+                String[] header = {
+                        "Username", "Register Number", "Email", "Department", "Academic Year",
+                        "Bank Name", "Account Holder Name", "Account Number", "IFSC Code", "Branch Name",
+                        "Branch Address", "PAN Number", "First Name", "Last Name", "Phone Number",
+                        "Birthday", "Gender", "Address", "Pin code", "City", "State", "Country"
+                };
+                csvWriter.writeNext(header);
+
+                for (User user : users) {
+                    List<String> data = new ArrayList<>();
+
+                    // Common information
+                    data.add(user.getUsername());
+                    data.add(user.getRegisterNumber());
+                    data.add(user.getEmail());
+                    data.add(user.getDepartment().toString());
+                    data.add(academicYearEntity.getStartYear() + " - " + academicYearEntity.getEndYear());
+
+                    // Bank details (conditionally added)
+                    if (Boolean.TRUE.equals(user.getBankDetailsCompleted())) {
+                        data.add(user.getBankDetails().getBankName());
+                        data.add(user.getBankDetails().getAccountHolderName());
+                        data.add(user.getBankDetails().getAccountNumber());
+                        data.add(user.getBankDetails().getIfscCode());
+                        data.add(user.getBankDetails().getBranchName());
+                        data.add(user.getBankDetails().getBranchAddress());
+                        data.add(user.getBankDetails().getPanNumber());
+                    } else {
+                        // Add empty values or placeholders for bank details if not completed
+                        data.addAll(Collections.nCopies(7, ""));
+                    }
+
+                    // Personal details
+                    if (Boolean.TRUE.equals(user.getPersonalDetailsCompleted())) {
+                        data.add(user.getPersonalDetails().getFirstName());
+                        data.add(user.getPersonalDetails().getLastName());
+                        data.add(user.getPersonalDetails().getPhoneNumber());
+                        data.add(user.getPersonalDetails().getBirthday().toString());
+                        data.add(user.getPersonalDetails().getGender());
+                    } else {
+                        data.addAll(Collections.nCopies(5, ""));
+                    }
+
+                    // Address details (conditionally added)
+                    if (Boolean.TRUE.equals(user.getAddressDetailsCompleted())) {
+                        data.add(user.getAddressDetails().getAddress());
+                        data.add(user.getAddressDetails().getPinCode());
+                        data.add(user.getAddressDetails().getCity());
+                        data.add(user.getAddressDetails().getState());
+                        data.add(user.getAddressDetails().getCountry());
+                    } else {
+                        // Add empty values or placeholders for address details if not completed
+                        data.addAll(Collections.nCopies(5, ""));
+                    }
+
+                    // Convert the list to an array and write to CSV
+                    csvWriter.writeNext(data.toArray(new String[0]));
+                }
+
+                String fileName = "STUDENTS_"
+                        + academicYearFilter.getValue().getStartYear()
+                        + "_"
+                        + academicYearFilter.getValue().getEndYear()
+                        + ".csv";
+
+                StreamResource resource = new StreamResource(fileName,
+                        () -> new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
+
+                downloadLink.setHref(resource);
+
+            }
+        } catch (IOException e) {
+            handleExportError(e);
+        }
+    }
+
+    private void handleExportError(IOException e) {
+        showNotification(
+                "Error exporting data to CSV",
+                NOTIFICATION_DURATION,
+                NotificationVariant.LUMO_ERROR,
+                Notification.Position.BOTTOM_START
+        );
+    }
+
+    // Centralized method for showing notifications
+    private void showNotification(String message, int duration, NotificationVariant variant, Notification.Position position) {
+        Notification notification = Notification.show(message, duration, position);
+        notification.addThemeVariants(variant);
+    }
+
+    private static class ColumnToggleContextMenu extends ContextMenu {
+        public ColumnToggleContextMenu(Component target) {
+            super(target);
+            setOpenOnClick(true);
+        }
+
+        void addColumnToggleItem(String label, Grid.Column<User> column) {
+            MenuItem menuItem = this.addItem(label, e -> {
+                column.setVisible(e.getSource().isChecked());
+            });
+            menuItem.setCheckable(true);
+            menuItem.setChecked(column.isVisible());
+            menuItem.setKeepOpen(true);
+        }
+    }
+}

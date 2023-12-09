@@ -1,11 +1,11 @@
 package com.nasc.application.views.password;
 
 import com.nasc.application.services.UserService;
+import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -47,9 +47,10 @@ public class PasswordChangeView extends VerticalLayout {
             String newPasswordValue = newPassword.getValue();
             String confirmPasswordValue = confirmPassword.getValue();
             userService.changePassword(oldPasswordValue, newPasswordValue, confirmPasswordValue);
-            Notification.show("Password changed successfully");
+            NotificationUtils.createSubmitSuccess("Password changed successfully");
         } catch (Exception e) {
-            Notification.show("An error occurred: " + e.getMessage());
+            String message = e.getMessage();
+            NotificationUtils.showErrorNotification(message);
         }
     }
 }

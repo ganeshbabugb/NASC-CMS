@@ -3,8 +3,8 @@ package com.nasc.application.data.repository;
 
 import com.nasc.application.data.model.AcademicYearEntity;
 import com.nasc.application.data.model.DepartmentEntity;
-import com.nasc.application.data.model.Role;
 import com.nasc.application.data.model.User;
+import com.nasc.application.data.model.enums.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -25,4 +25,11 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
             @Param("role") Role role,
             @Param("academicYear") AcademicYearEntity academicYear
     );
+
+    @Query("SELECT u.registerNumber FROM User u WHERE u.registerNumber IN :registerNumbers")
+    List<String> findExistingRegisterNumbers(@Param("registerNumbers") List<String> registerNumbers);
+
+    List<User> findUsersByRolesContains(Role role);
+
+    List<User> findUsersByDepartmentAndAcademicYear(DepartmentEntity department, AcademicYearEntity academicYear);
 }

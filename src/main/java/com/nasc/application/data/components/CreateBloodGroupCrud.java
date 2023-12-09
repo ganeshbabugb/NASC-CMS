@@ -4,13 +4,13 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.nasc.application.data.model.BloodGroupEntity;
 import com.nasc.application.services.BloodGroupService;
 import com.nasc.application.services.dataprovider.GenericDataProvider;
+import com.nasc.application.utils.NotificationUtils;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.crud.BinderCrudEditor;
 import com.vaadin.flow.component.crud.Crud;
 import com.vaadin.flow.component.crud.CrudEditor;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -78,25 +78,13 @@ public class CreateBloodGroupCrud extends VerticalLayout {
                 new GenericDataProvider<>(BloodGroupEntity.class, service);
         crud.setDataProvider(genericDataProvider);
         crud.addDeleteListener(deleteEvent -> {
-            confirmDelete(deleteEvent.getItem());
             genericDataProvider.delete(deleteEvent.getItem());
+            NotificationUtils.showSuccessNotification("Blood Group Deleted Successfully");
         });
         crud.addSaveListener(saveEvent -> {
             genericDataProvider.persist(saveEvent.getItem());
-            showSaveNotification();
+            NotificationUtils.showSuccessNotification("Blood Group Saved Successfully");
         });
-    }
-
-    private void confirmDelete(BloodGroupEntity item) {
-        Notification.show("Item deleted: " + item.toString(),
-                5000,
-                Notification.Position.BOTTOM_END);
-    }
-
-    private void showSaveNotification() {
-        Notification.show("Item saved successfully",
-                5000,
-                Notification.Position.BOTTOM_END);
     }
 
 }

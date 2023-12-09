@@ -1,6 +1,7 @@
 package com.nasc.application.services;
 
 import com.nasc.application.data.model.*;
+import com.nasc.application.data.model.enums.Role;
 import com.nasc.application.data.repository.UserRepository;
 import com.nasc.application.security.AuthenticatedUser;
 import com.vaadin.flow.spring.security.AuthenticationContext;
@@ -119,7 +120,8 @@ public class UserService {
                 throw new IllegalArgumentException("CONFIRM PASSWORD AND NEW PASSWORD DON'T MATCH");
             }
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException(e);
+            // throw only the message from the IllegalArgumentException without wrapping it in a RuntimeException.
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -134,30 +136,41 @@ public class UserService {
         userRepository.save(currentUser);
     }
 
-    /*
-    public List<User> getStudentsForHod(User hod) {
-        if (hod.getRoles().contains(Role.HOD)) {
-            DepartmentEntity hodDepartmentEntity = hod.getDepartment();
-            return userRepository.findByDepartment(hodDepartmentEntity);
-        }
-        return Collections.emptyList();
-    }
-    */
-
-    public List<User> findUsersByDepartmentAndRoleAndAcademicYear(Role targetRole, AcademicYearEntity academicYear) {
+    // To get user's based on department and role and academic year
+    public List<User> findStudentsByDepartmentAndRoleAndAcademicYear(Role targetRole, AcademicYearEntity academicYear) {
         Optional<User> user = authenticatedUser.get();
         return user.map(value -> userRepository.findUsersByDepartmentAndRoleAndAcademicYear(value.getDepartment(), targetRole, academicYear))
                 .orElse(Collections.emptyList());
     }
 
+    // To get user's based on department and role and academic year
+    public List<User> findStudentsByDepartmentAndRoleAndAcademicYear(DepartmentEntity departmentEntity, Role targetRole, AcademicYearEntity academicYear) {
+        return userRepository.findUsersByDepartmentAndRoleAndAcademicYear(departmentEntity, targetRole, academicYear);
+    }
+
+
+    // To get user's based on department and role
     public List<User> findUsersByDepartmentAndRole(Role targetRole) {
         Optional<User> user = authenticatedUser.get();
         return user.map(value -> userRepository.findUsersByDepartmentAndRole(value.getDepartment(), targetRole))
                 .orElse(Collections.emptyList());
     }
 
+    // To check the list of user already available are not
+    public List<String> findExistingRegisterNumbers(List<String> registerNumbers) {
+        return userRepository.findExistingRegisterNumbers(registerNumbers);
+    }
+
+    // To save all the user's
     public void saveAll(List<User> users) {
         userRepository.saveAll(users);
     }
-}
 
+    public List<User> findUsersByRole(Role role) {
+        return userRepository.findUsersByRolesContains(role);
+    }
+
+    public List<User> findUsersByDepartmentAndAcademicYear(DepartmentEntity selectedDepartment, AcademicYearEntity selectedAcademicYear) {
+        return userRepository.findUsersByDepartmentAndAcademicYear(selectedDepartment, selectedAcademicYear);
+    }
+}

@@ -3,6 +3,7 @@ package com.nasc.application.views.personform;
 import com.nasc.application.data.model.PersonalDetails;
 import com.nasc.application.data.model.User;
 import com.nasc.application.services.UserService;
+import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
@@ -13,12 +14,12 @@ import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
@@ -34,15 +35,15 @@ public class PersonFormView extends Composite<VerticalLayout> {
     private final VerticalLayout mainLayout = new VerticalLayout();
     private final H3 title = new H3();
     private final FormLayout formLayout = new FormLayout();
-    private final TextField firstNameField = new TextField();
-    private final TextField lastNameField = new TextField();
-    private final DatePicker birthdayPicker = new DatePicker();
-    private final TextField phoneNumberField = new TextField();
-    private final EmailField emailField = new EmailField();
-    private final ComboBox<String> genderComboBox = new ComboBox<>();
+    private final TextField firstName = new TextField();
+    private final TextField lastName = new TextField();
+    private final DatePicker birthday = new DatePicker();
+    private final TextField phoneNumber = new TextField();
+    private final EmailField email = new EmailField();
+    private final ComboBox<String> gender = new ComboBox<>();
     private final HorizontalLayout buttonLayout = new HorizontalLayout();
     private final Button saveButton = new Button();
-    private final Button cancelButton = new Button();
+    private final BeanValidationBinder<PersonalDetails> binder = new BeanValidationBinder<>(PersonalDetails.class);
 
     public PersonFormView(UserService userService) {
         this.userService = userService;
@@ -60,11 +61,11 @@ public class PersonFormView extends Composite<VerticalLayout> {
         title.setWidth("100%");
 
         formLayout.setWidth("100%");
-        firstNameField.setLabel("First Name");
-        lastNameField.setLabel("Last Name");
-        birthdayPicker.setLabel("Birthday");
-        phoneNumberField.setLabel("Phone Number");
-        emailField.setLabel("Email");
+        firstName.setLabel("First Name");
+        lastName.setLabel("Last Name");
+        birthday.setLabel("Birthday");
+        phoneNumber.setLabel("Phone Number");
+        email.setLabel("Email");
 
         buttonLayout.addClassName(Gap.MEDIUM);
         buttonLayout.setWidth("100%");
@@ -74,18 +75,15 @@ public class PersonFormView extends Composite<VerticalLayout> {
         saveButton.setWidth("min-content");
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        cancelButton.setText("Cancel");
-        cancelButton.setWidth("min-content");
-
         mainLayout.add(title, formLayout, buttonLayout);
-        formLayout.add(firstNameField,
-                lastNameField,
-                birthdayPicker,
-                phoneNumberField,
-                emailField,
-                genderComboBox);
-        genderComboBox.setLabel("Gender");
-        genderComboBox.setItems("Male", "Female", "Other");
+        formLayout.add(firstName,
+                lastName,
+                birthday,
+                phoneNumber,
+                email,
+                gender);
+        gender.setLabel("Gender");
+        gender.setItems("Male", "Female", "Other");
 
         saveButton.addClickListener(e -> {
             if (isPersonalDetailsAlreadySaved()) {
@@ -95,15 +93,16 @@ public class PersonFormView extends Composite<VerticalLayout> {
             }
         });
 
+        binder.addStatusChangeListener(e -> saveButton.setEnabled(binder.isValid()));
 
-        buttonLayout.add(saveButton, cancelButton);
+        buttonLayout.add(saveButton);
 
         getContent().add(mainLayout);
     }
 
     private void initFormWithExistingDetails() {
-        // TODO: Add logic to initialize the form with existing personal details if available
         User currentUser = userService.getCurrentUser();
+        binder.bindInstanceFields(this);
         PersonalDetails existingPersonalDetails = currentUser.getPersonalDetails();
         if (existingPersonalDetails != null) {
             populateForm(existingPersonalDetails);
@@ -112,54 +111,48 @@ public class PersonFormView extends Composite<VerticalLayout> {
     }
 
     private void populateForm(PersonalDetails existingPersonalDetails) {
-        // TODO: Populate the form fields with the existing personal details
-        firstNameField.setValue(existingPersonalDetails.getFirstName());
-        lastNameField.setValue(existingPersonalDetails.getLastName());
-        birthdayPicker.setValue(existingPersonalDetails.getBirthday());
-        phoneNumberField.setValue(existingPersonalDetails.getPhoneNumber());
-        emailField.setValue(existingPersonalDetails.getEmail());
-        genderComboBox.setValue(existingPersonalDetails.getGender());
+        firstName.setValue(existingPersonalDetails.getFirstName());
+        lastName.setValue(existingPersonalDetails.getLastName());
+        birthday.setValue(existingPersonalDetails.getBirthday());
+        phoneNumber.setValue(existingPersonalDetails.getPhoneNumber());
+        email.setValue(existingPersonalDetails.getEmail());
+        gender.setValue(existingPersonalDetails.getGender());
     }
 
     private boolean isPersonalDetailsAlreadySaved() {
-        // TODO: Implement logic to check if personal details are already saved for the current user
         return userService.getCurrentUser().getPersonalDetails() != null;
     }
 
     private void updatePersonalDetails() {
-        // TODO: Implement logic to update the personal details for the current user
         User currentUser = userService.getCurrentUser();
         PersonalDetails existingPersonalDetails = currentUser.getPersonalDetails();
-        existingPersonalDetails.setFirstName(firstNameField.getValue());
-        existingPersonalDetails.setLastName(lastNameField.getValue());
-        existingPersonalDetails.setBirthday(birthdayPicker.getValue());
-        existingPersonalDetails.setPhoneNumber(phoneNumberField.getValue());
-        existingPersonalDetails.setEmail(emailField.getValue());
-        existingPersonalDetails.setGender(genderComboBox.getValue());
+        existingPersonalDetails.setFirstName(firstName.getValue());
+        existingPersonalDetails.setLastName(lastName.getValue());
+        existingPersonalDetails.setBirthday(birthday.getValue());
+        existingPersonalDetails.setPhoneNumber(phoneNumber.getValue());
+        existingPersonalDetails.setEmail(email.getValue());
+        existingPersonalDetails.setGender(gender.getValue());
         userService.saveUserWithPersonalDetails(currentUser, existingPersonalDetails);
-        Notification.show("Personal Form Updated Successfully.");
+        NotificationUtils.createSubmitSuccess("Personal Form Updated Successfully.");
     }
 
     private void savePersonalDetails() {
-        // TODO: Implement logic to save the personal details for the current user
         User currentUser = userService.getCurrentUser();
         PersonalDetails personalDetailsFromForm = createPersonalDetailsFromForm();
         personalDetailsFromForm.setUser(currentUser);
         currentUser.setPersonalDetails(personalDetailsFromForm);
         userService.saveUserWithPersonalDetails(currentUser, personalDetailsFromForm);
-        Notification.show("Personal Form Saved Successfully.");
+        NotificationUtils.createSubmitSuccess("Personal Form Saved Successfully.");
     }
 
     private PersonalDetails createPersonalDetailsFromForm() {
-        // TODO: Implement logic to create PersonalDetails object from the form fields
         PersonalDetails personalDetails = new PersonalDetails();
-        personalDetails.setFirstName(firstNameField.getValue());
-        personalDetails.setLastName(lastNameField.getValue());
-        personalDetails.setBirthday(birthdayPicker.getValue());
-        personalDetails.setPhoneNumber(phoneNumberField.getValue());
-        personalDetails.setEmail(emailField.getValue());
-        personalDetails.setGender(genderComboBox.getValue());
+        personalDetails.setFirstName(firstName.getValue());
+        personalDetails.setLastName(lastName.getValue());
+        personalDetails.setBirthday(birthday.getValue());
+        personalDetails.setPhoneNumber(phoneNumber.getValue());
+        personalDetails.setEmail(email.getValue());
+        personalDetails.setGender(gender.getValue());
         return personalDetails;
-//        return null;
     }
 }

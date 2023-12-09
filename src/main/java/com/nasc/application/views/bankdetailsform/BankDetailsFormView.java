@@ -3,6 +3,7 @@ package com.nasc.application.views.bankdetailsform;
 import com.nasc.application.data.model.BankDetails;
 import com.nasc.application.data.model.User;
 import com.nasc.application.services.UserService;
+import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
@@ -10,14 +11,13 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
 import org.springframework.beans.factory.annotation.Autowired;
-
 
 @PageTitle("Bank Details Form")
 @Route(value = "bank-details-form", layout = MainLayout.class)
@@ -30,19 +30,19 @@ public class BankDetailsFormView extends Div {
     private final TextField branchName = new TextField("Branch Name");
     private final TextField branchAddress = new TextField("Branch Address");
     private final TextField panNumber = new TextField("Permanent Account Number");
-    private final Button cancel = new Button("Cancel");
-    private final Button submit = new Button("Submit");
+    private final Button saveButton = new Button("Save");
     private final UserService userService;
+    private final BeanValidationBinder<BankDetails> binder = new BeanValidationBinder<>(BankDetails.class);
 
     @Autowired
     public BankDetailsFormView(UserService userService) {
         this.userService = userService;
-
         addClassName("bank-details-form-view");
         add(createTitle(), createFormLayout(), createButtonLayout());
 
-        cancel.addClickListener(e -> Notification.show("Not implemented"));
-        submit.addClickListener(e -> {
+        binder.bindInstanceFields(this);
+
+        saveButton.addClickListener(e -> {
             if (isBankDetailsAlreadySaved()) {
                 updateBankDetails();
             } else {
@@ -51,6 +51,8 @@ public class BankDetailsFormView extends Div {
         });
 
         initFormWithExistingDetails();
+        binder.addStatusChangeListener(e -> saveButton.setEnabled(binder.isValid()));
+
     }
 
     private Component createTitle() {
@@ -65,8 +67,8 @@ public class BankDetailsFormView extends Div {
     }
 
     private Component createButtonLayout() {
-        submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        HorizontalLayout buttonLayout = new HorizontalLayout(submit, cancel);
+        saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        HorizontalLayout buttonLayout = new HorizontalLayout(saveButton);
         buttonLayout.addClassName("button-layout");
         return buttonLayout;
     }
@@ -77,7 +79,7 @@ public class BankDetailsFormView extends Div {
 
         if (existingBankDetails != null) {
             populateForm(existingBankDetails);
-            submit.setText("Update");
+            saveButton.setText("Update");
         }
     }
 
@@ -107,8 +109,7 @@ public class BankDetailsFormView extends Div {
 
         // Save the user with bank details
         userService.saveUserWithBankDetails(currentUser, newBankDetails);
-
-        Notification.show("Bank details saved successfully");
+        NotificationUtils.createSubmitSuccess("Bank details saved successfully");
     }
 
     private void updateBankDetails() {
@@ -130,7 +131,7 @@ public class BankDetailsFormView extends Div {
         // Save the user with updated bank details
         userService.saveUserWithBankDetails(currentUser, existingBankDetails);
 
-        Notification.show("Bank details updated successfully");
+        NotificationUtils.createSubmitSuccess("Bank details updated successfully");
     }
 
     private BankDetails createBankDetailsFromForm() {

@@ -4,6 +4,7 @@ import com.nasc.application.data.model.AddressDetails;
 import com.nasc.application.services.CountryService;
 import com.nasc.application.services.SampleAddressService;
 import com.nasc.application.services.StateService;
+import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -13,9 +14,6 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.Notification.Position;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
@@ -129,16 +127,12 @@ public class AddressMasterDetailView extends Div implements BeforeEnterObserver,
                 UI.getCurrent().navigate(AddressMasterDetailView.class);
 
                 refreshGrid();
-                Notification.show("Data updated");
+                NotificationUtils.showSuccessNotification("Data updated");
                 clearForm();
-                log.info("Data updated");
             } catch (ObjectOptimisticLockingFailureException exception) {
-                Notification n = Notification.show(
-                        "Error updating the data. Somebody else has updated the record while you were making changes.");
-                n.setPosition(Position.MIDDLE);
-                n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                NotificationUtils.showErrorNotification("Error updating the data. Somebody else has updated the record while you were making changes.");
             } catch (ValidationException validationException) {
-                Notification.show("Failed to update the data. Check again that all values are valid");
+                NotificationUtils.showErrorNotification("Failed to update the data. Check again that all values are valid");
             }
         });
     }
@@ -151,11 +145,8 @@ public class AddressMasterDetailView extends Div implements BeforeEnterObserver,
             if (sampleAddressFromBackend.isPresent()) {
                 populateForm(sampleAddressFromBackend.get());
             } else {
-                Notification.show(
-                        String.format("The requested sampleAddress was not found, ID = %s", sampleAddressId.get()),
-                        3000, Notification.Position.BOTTOM_START);
-                // when a row is selected but the data is no longer available,
-                // refresh grid
+                String message = String.format("The requested sampleAddress was not found, ID = %s", sampleAddressId.get());
+                NotificationUtils.showErrorNotification(message);
                 refreshGrid();
                 event.forwardTo(AddressMasterDetailView.class);
             }

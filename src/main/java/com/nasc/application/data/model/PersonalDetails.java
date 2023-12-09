@@ -3,6 +3,10 @@ package com.nasc.application.data.model;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
 
 import java.time.LocalDate;
 
@@ -10,11 +14,19 @@ import java.time.LocalDate;
 @Table(name = "personal_details")
 public class PersonalDetails extends AbstractEntity {
 
+    @NotBlank(message = "First name cannot be blank")
     private String firstName;
+    @NotBlank(message = "Last name cannot be blank")
     private String lastName;
+    @Email(message = "Invalid email format")
+    @NotBlank(message = "Email cannot be blank")
     private String email;
+    @NotBlank(message = "Phone number cannot be blank")
+    @Pattern(regexp = "\\d{10}", message = "Phone number must be 10 digits")
     private String phoneNumber;
+    @Past(message = "Birthday must be in the past")
     private LocalDate birthday;
+    @NotBlank(message = "Gender cannot be blank")
     private String gender;
     @OneToOne(mappedBy = "personalDetails")
     private User user;

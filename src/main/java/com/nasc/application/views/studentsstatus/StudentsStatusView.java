@@ -2,10 +2,11 @@ package com.nasc.application.views.studentsstatus;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.nasc.application.data.model.AcademicYearEntity;
-import com.nasc.application.data.model.Role;
 import com.nasc.application.data.model.User;
+import com.nasc.application.data.model.enums.Role;
 import com.nasc.application.services.AcademicYearService;
 import com.nasc.application.services.UserService;
+import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
 import com.opencsv.CSVWriter;
 import com.vaadin.flow.component.Component;
@@ -22,8 +23,6 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -49,7 +48,6 @@ import java.util.List;
 @Route(value = "students-status", layout = MainLayout.class)
 @RolesAllowed({"HOD", "PROFESSOR"})
 public class StudentsStatusView extends VerticalLayout {
-    private static final int NOTIFICATION_DURATION = 3000;
     private final UserService userService;
     private final AcademicYearService academicYearService;
     private final Button menuButton = new Button("Show/Hide", FontAwesome.Solid.LIST_CHECK.create());
@@ -59,6 +57,9 @@ public class StudentsStatusView extends VerticalLayout {
     private GridListDataView<User> gridListDataView;
     private Grid.Column<User> userColumn;
     private ComboBox<AcademicYearEntity> academicYearFilter;
+    //Layouts
+    private HorizontalLayout filterLayout;
+    private HorizontalLayout exportAndColumnListLayout;
 
     public StudentsStatusView(UserService service, AcademicYearService academicYearService) {
         this.userService = service;
@@ -66,11 +67,18 @@ public class StudentsStatusView extends VerticalLayout {
         addClassName("students-status-view");
         setSizeFull();
         createAcademicYearFilterComponent();
-        HorizontalLayout exportAndColumnListLayout = createExportAndColumnListLayout();
-        createGrid();
+        createExportAndColumnListLayout();
         downloadLink = createDownloadLink();
         exportAndColumnListLayout.add(menuButton, downloadLink);
-        add(academicYearFilter, exportAndColumnListLayout, grid);
+        createGrid();
+        createFilterLayout();
+        filterLayout.add(academicYearFilter);
+        add(filterLayout, exportAndColumnListLayout, grid);
+    }
+
+    private void createFilterLayout() {
+        filterLayout = new HorizontalLayout();
+        filterLayout.setSpacing(true);
     }
 
     private static FontAwesome.Regular.Icon getThumbsUpIcon() {
@@ -85,12 +93,13 @@ public class StudentsStatusView extends VerticalLayout {
         return icon;
     }
 
-    private HorizontalLayout createExportAndColumnListLayout() {
-        HorizontalLayout layout = new HorizontalLayout();
-        layout.setWidthFull();
-        layout.setJustifyContentMode(JustifyContentMode.END);
-        layout.setAlignItems(Alignment.CENTER);
-        return layout;
+    private void createExportAndColumnListLayout() {
+        exportAndColumnListLayout = new HorizontalLayout();
+        exportAndColumnListLayout.setWidthFull();
+        exportAndColumnListLayout.setJustifyContentMode(JustifyContentMode.END);
+        exportAndColumnListLayout.setAlignItems(Alignment.CENTER);
+        exportAndColumnListLayout.setSpacing(true);
+        exportAndColumnListLayout.getElement().getStyle().set("margin-bottom", "1em");
     }
 
     private Anchor createDownloadLink() {
@@ -102,13 +111,13 @@ public class StudentsStatusView extends VerticalLayout {
     }
 
     private void createAcademicYearFilterComponent() {
-        ComboBox<AcademicYearEntity> filter = new ComboBox<>();
-        filter.setPlaceholder("Filter by Academic Year");
-        filter.setClearButtonVisible(false);
-        filter.setItems(academicYearService.findAll());
-        filter.setItemLabelGenerator(this::generateAcademicYearLabel);
-        filter.addValueChangeListener(this::handleAcademicYearFilterChange);
-        academicYearFilter = filter;
+        List<AcademicYearEntity> academicYears = academicYearService.findAll();
+        academicYearFilter = new ComboBox<>();
+        academicYearFilter.setLabel("Filter by Academic Year");
+        academicYearFilter.setClearButtonVisible(false);
+        academicYearFilter.setItems(academicYears);
+        academicYearFilter.setItemLabelGenerator(this::generateAcademicYearLabel);
+        academicYearFilter.addValueChangeListener(this::handleAcademicYearFilterChange);
     }
 
     private void createGrid() {
@@ -238,11 +247,7 @@ public class StudentsStatusView extends VerticalLayout {
             List<User> users = getUsersByRoleForLoggedInUserDepartment(academicYearEntity);
             if (users.isEmpty()) {
                 if (users.isEmpty()) {
-                    showNotification(
-                            "No information recorded for the selected academic year",
-                            NOTIFICATION_DURATION,
-                            NotificationVariant.LUMO_WARNING, Notification.Position.BOTTOM_END
-                    );
+                    NotificationUtils.showWarningNotification("No information recorded for the selected academic year");
                 }
             }
             gridListDataView = grid.setItems(users);
@@ -304,7 +309,7 @@ public class StudentsStatusView extends VerticalLayout {
     }
 
     private List<User> getUsersByRoleForLoggedInUserDepartment(AcademicYearEntity value) {
-        return userService.findUsersByDepartmentAndRoleAndAcademicYear(Role.STUDENT, value);
+        return userService.findStudentsByDepartmentAndRoleAndAcademicYear(Role.STUDENT, value);
     }
 
     private Icon createIcon(VaadinIcon vaadinIcon) {
@@ -378,7 +383,7 @@ public class StudentsStatusView extends VerticalLayout {
                         data.addAll(Collections.nCopies(5, ""));
                     }
 
-                    // Convert the list to an array and write to CSV
+                    // Convert the list to an array and write to CSV`
                     csvWriter.writeNext(data.toArray(new String[0]));
                 }
 
@@ -395,23 +400,8 @@ public class StudentsStatusView extends VerticalLayout {
 
             }
         } catch (IOException e) {
-            handleExportError(e);
+            NotificationUtils.showErrorNotification("Error exporting data to CSV");
         }
-    }
-
-    private void handleExportError(IOException e) {
-        showNotification(
-                "Error exporting data to CSV",
-                NOTIFICATION_DURATION,
-                NotificationVariant.LUMO_ERROR,
-                Notification.Position.BOTTOM_START
-        );
-    }
-
-    // Centralized method for showing notifications
-    private void showNotification(String message, int duration, NotificationVariant variant, Notification.Position position) {
-        Notification notification = Notification.show(message, duration, position);
-        notification.addThemeVariants(variant);
     }
 
     private static class ColumnToggleContextMenu extends ContextMenu {

@@ -2,6 +2,7 @@ package com.nasc.application.views.studentmasterdetails;
 
 import com.nasc.application.data.model.SamplePerson;
 import com.nasc.application.services.SamplePersonService;
+import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -14,9 +15,6 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.Notification.Position;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -127,15 +125,12 @@ public class StudentMasterDetailsView extends Div implements BeforeEnterObserver
                 samplePersonService.update(this.samplePerson);
                 clearForm();
                 refreshGrid();
-                Notification.show("Data updated");
+                NotificationUtils.showInfoNotification("Data updated");
                 UI.getCurrent().navigate(StudentMasterDetailsView.class);
             } catch (ObjectOptimisticLockingFailureException exception) {
-                Notification n = Notification.show(
-                        "Error updating the data. Somebody else has updated the record while you were making changes.");
-                n.setPosition(Position.MIDDLE);
-                n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                NotificationUtils.showErrorNotification("Error updating the data. Somebody else has updated the record while you were making changes.");
             } catch (ValidationException validationException) {
-                Notification.show("Failed to update the data. Check again that all values are valid");
+                NotificationUtils.showErrorNotification("Failed to update the data. Check again that all values are valid");
             }
         });
     }
@@ -148,10 +143,8 @@ public class StudentMasterDetailsView extends Div implements BeforeEnterObserver
             if (samplePersonFromBackend.isPresent()) {
                 populateForm(samplePersonFromBackend.get());
             } else {
-                Notification.show(
-                        String.format("The requested samplePerson was not found, ID = %s", samplePersonId.get()), 3000,
-                        Notification.Position.BOTTOM_START);
-                // when a row is selected but the data is no longer available,
+                String message = String.format("The requested samplePerson was not found, ID = %s", samplePersonId.get());
+                NotificationUtils.showErrorNotification(message);
                 // refresh grid
                 refreshGrid();
                 event.forwardTo(StudentMasterDetailsView.class);

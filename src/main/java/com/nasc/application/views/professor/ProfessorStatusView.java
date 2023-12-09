@@ -1,9 +1,10 @@
 package com.nasc.application.views.professor;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
-import com.nasc.application.data.model.Role;
 import com.nasc.application.data.model.User;
+import com.nasc.application.data.model.enums.Role;
 import com.nasc.application.services.UserService;
+import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
 import com.opencsv.CSVWriter;
 import com.vaadin.flow.component.Component;
@@ -20,8 +21,6 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -47,7 +46,6 @@ import java.util.List;
 @Route(value = "professor-status", layout = MainLayout.class)
 @RolesAllowed({"HOD"})
 public class ProfessorStatusView extends VerticalLayout {
-    private static final int NOTIFICATION_DURATION = 3000;
     private final UserService userService;
     private final Anchor downloadLink;
     private final Button menuButton = new Button("Show/Hide", FontAwesome.Solid.LIST_CHECK.create());
@@ -69,7 +67,7 @@ public class ProfessorStatusView extends VerticalLayout {
         menuButtonLayout.setJustifyContentMode(JustifyContentMode.END);
         menuButtonLayout.setAlignItems(Alignment.CENTER);
 
-        add(new ComboBox<>(), menuButtonLayout, grid);
+        add(menuButtonLayout, grid);
     }
 
     private static FontAwesome.Regular.Icon getThumbsUpIcon() {
@@ -347,22 +345,8 @@ public class ProfessorStatusView extends VerticalLayout {
                 downloadLink.setHref(resource);
             }
         } catch (IOException e) {
-            handleExportError(e);
+            NotificationUtils.showErrorNotification("Error exporting data to CSV");
         }
-    }
-
-    private void handleExportError(IOException e) {
-        showNotification(
-                "Error exporting data to CSV",
-                NOTIFICATION_DURATION,
-                NotificationVariant.LUMO_ERROR,
-                Notification.Position.BOTTOM_START
-        );
-    }
-
-    private void showNotification(String message, int duration, NotificationVariant variant, Notification.Position position) {
-        Notification notification = Notification.show(message, duration, position);
-        notification.addThemeVariants(variant);
     }
 
     private static class ColumnToggleContextMenu extends ContextMenu {

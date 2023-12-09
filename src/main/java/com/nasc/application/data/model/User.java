@@ -1,6 +1,7 @@
 package com.nasc.application.data.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nasc.application.data.model.enums.Role;
 import com.opencsv.bean.CsvBindByName;
 import jakarta.persistence.*;
 
@@ -13,6 +14,7 @@ public class User extends AbstractEntity {
     @CsvBindByName
     private String username;
     @CsvBindByName
+    @Column(unique = true)
     private String registerNumber;
     @CsvBindByName
     private String email;

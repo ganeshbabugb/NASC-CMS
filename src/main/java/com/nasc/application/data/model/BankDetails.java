@@ -3,17 +3,34 @@ package com.nasc.application.data.model;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
 @Entity
 @Table(name = "bank_details")
 public class BankDetails extends AbstractEntity {
 
+    @NotBlank(message = "Account holder name cannot be blank")
     private String accountHolderName;
+
+    @NotBlank(message = "Bank name cannot be blank")
     private String bankName;
+
+    @NotBlank(message = "Account number cannot be blank")
+    @Pattern(regexp = "[0-9]+", message = "Account number must contain only digits")
     private String accountNumber;
+
+    @NotBlank(message = "IFSC code cannot be blank")
     private String ifscCode;
+
+    @NotBlank(message = "Branch name cannot be blank")
     private String branchName;
+
+    @NotBlank(message = "Branch address cannot be blank")
     private String branchAddress;
+
+    //    @NotBlank(message = "PAN number cannot be blank")
+    @Pattern(regexp = "[A-Z]{5}[0-9]{4}[A-Z]", message = "Invalid PAN number format")
     private String panNumber;
 
     @OneToOne(mappedBy = "bankDetails")

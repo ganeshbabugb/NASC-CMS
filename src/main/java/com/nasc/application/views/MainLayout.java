@@ -9,7 +9,10 @@ import com.nasc.application.views.addressform.AddressFormView;
 import com.nasc.application.views.addressmasterdetail.AddressMasterDetailView;
 import com.nasc.application.views.bankdetailsform.BankDetailsFormView;
 import com.nasc.application.views.createstudents.CreateUsers;
+import com.nasc.application.views.createsubjectcrud.CreateSubjectCrud;
 import com.nasc.application.views.dashboard.DashboardView;
+import com.nasc.application.views.markentryview.MarkEntryView;
+import com.nasc.application.views.marktableview.MarksTableView;
 import com.nasc.application.views.password.PasswordChangeView;
 import com.nasc.application.views.personform.PersonFormView;
 import com.nasc.application.views.professor.ProfessorStatusView;
@@ -113,6 +116,21 @@ public class MainLayout extends AppLayout {
                     LineAwesomeIcon.ADDRESS_CARD.create()));
 
         }
+        if (accessChecker.hasAccess(CreateSubjectCrud.class)) {
+            nav.addItem(new SideNavItem("Create Subject Crud", CreateSubjectCrud.class,
+                    FontAwesome.Solid.BOOK_OPEN.create()));
+
+        }
+        if (accessChecker.hasAccess(MarkEntryView.class)) {
+            nav.addItem(new SideNavItem("Subject Mark", MarkEntryView.class,
+                    FontAwesome.Solid.PENCIL.create()));
+
+        }
+        if (accessChecker.hasAccess(MarksTableView.class)) {
+            nav.addItem(new SideNavItem("View Mark", MarksTableView.class,
+                    FontAwesome.Solid.BOOK_OPEN_READER.create()));
+
+        }
         if (accessChecker.hasAccess(CreateUsers.class)) {
             nav.addItem(new SideNavItem("Create Users", CreateUsers.class,
                     FontAwesome.Solid.USER_PLUS.create()));
@@ -147,7 +165,8 @@ public class MainLayout extends AppLayout {
 
             Avatar avatar = new Avatar(user.getUsername());
 
-/*
+//            https://vaadin.com/blog/saving-and-displaying-images-using-jpa
+            /*
             // Profile icon
             StreamResource resource = new StreamResource("profile-pic",
                     () -> new ByteArrayInputStream(user.getProfilePicture()));

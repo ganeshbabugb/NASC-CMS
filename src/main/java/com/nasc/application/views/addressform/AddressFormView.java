@@ -5,6 +5,7 @@ import com.nasc.application.data.model.User;
 import com.nasc.application.services.CountryService;
 import com.nasc.application.services.StateService;
 import com.nasc.application.services.UserService;
+import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
@@ -153,7 +154,7 @@ public class AddressFormView extends Composite<VerticalLayout> {
         existingAddressDetails.setState(state.getValue());
         existingAddressDetails.setCountry(country.getValue());
         userService.saveUserWithAddressDetails(currentUser, existingAddressDetails);
-        Notification.show("Address details updated successfully");
+        NotificationUtils.createSubmitSuccess("Address details updated successfully");
     }
 
     private void saveAddressDetails() {
@@ -162,7 +163,7 @@ public class AddressFormView extends Composite<VerticalLayout> {
         addressDetailsFromForm.setUser(currentUser);
         currentUser.setAddressDetails(addressDetailsFromForm);
         userService.saveUserWithAddressDetails(currentUser, addressDetailsFromForm);
-        Notification.show("Address details saved successfully");
+        NotificationUtils.createSubmitSuccess("Address details saved successfully");
     }
 
     private AddressDetails createAddressDetailsFromForm() {

@@ -13,12 +13,6 @@ import org.springframework.context.annotation.Bean;
 
 import javax.sql.DataSource;
 
-/**
- * The entry point of the Spring Boot application.
- * <p>
- * Use the @PWA annotation make the application installable on phones, tablets
- * and some desktop browsers.
- */
 @SpringBootApplication
 @Theme(value = "my-app")
 @Slf4j

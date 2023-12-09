@@ -262,6 +262,7 @@
     "Frontend/generated/jar-resources/lit-renderer.ts",
     "Frontend/generated/jar-resources/menubarConnector.js",
     "Frontend/generated/jar-resources/messageListConnector.js",
+    "Frontend/generated/jar-resources/recipe/copytoclipboard/copytoclipboard.js",
     "Frontend/generated/jar-resources/selectConnector.js",
     "Frontend/generated/jar-resources/src/fc-badge-list.ts",
     "Frontend/generated/jar-resources/tooltip.ts",
@@ -289,6 +290,7 @@
     "lit-renderer.ts": "afefa9f5fcb38260a0ff08bc044a5f591f242689ca3c7905130ad32df0476e7c",
     "menubarConnector.js": "8ddac5a87155632c516fd16c9402bd9a2fe6d965998169743744842aacdfd412",
     "messageListConnector.js": "480d7092b9fe42aab45756eb4287b2c4b0d6e5d38514e967543bc5c317948c18",
+    "recipe/copytoclipboard/copytoclipboard.js": "859e4bdb6dc0a38d85f43a474c4097369a6b1a16273130509f18e6e0058cc997",
     "selectConnector.js": "bd4277e735d390853603351ddd963233349b702789ddf8ce000df5179bb30523",
     "src/fc-badge-list.ts": "7d90a711fb37c3da22cbad39d29fb39db804a4e2df63a49588e57686704b11de",
     "tooltip.ts": "c20956128c63a17782338c4647335c199ad143646b334d95d09b27ec3eddd141",
@@ -302,7 +304,7 @@
     "my-app": "{\n  \"lumoImports\" : [ \"typography\", \"color\", \"spacing\", \"badge\", \"utility\" ]\n}"
   },
   "entryScripts": [
-    "VAADIN/build/indexhtml-1d822211.js"
+    "VAADIN/build/indexhtml-8531805e.js"
   ],
   "webComponents": [],
   "cvdlModules": {
@@ -337,6 +339,6 @@
   },
   "packageJsonHash": "489074649492a1e4e99f1a6a47e6d56bf1e290f7791dfb4a56830d1b741182e6",
   "indexHtmlGenerated": [
-    "  <script type=\"module\" crossorigin src=\"./VAADIN/build/indexhtml-1d822211.js\"></script>"
+    "  <script type=\"module\" crossorigin src=\"./VAADIN/build/indexhtml-8531805e.js\"></script>"
   ]
 }

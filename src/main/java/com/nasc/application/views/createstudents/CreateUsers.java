@@ -1,27 +1,33 @@
 package com.nasc.application.views.createstudents;
 
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.nasc.application.data.model.AcademicYearEntity;
 import com.nasc.application.data.model.DepartmentEntity;
-import com.nasc.application.data.model.Role;
 import com.nasc.application.data.model.User;
+import com.nasc.application.data.model.enums.Role;
 import com.nasc.application.services.AcademicYearService;
 import com.nasc.application.services.DepartmentService;
 import com.nasc.application.services.UserService;
+import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
 import com.opencsv.CSVReader;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.HeaderColumnNameMappingStrategy;
 import com.opencsv.exceptions.CsvException;
 import com.vaadin.flow.component.HasValue;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.dependency.JsModule;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.upload.SucceededEvent;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.provider.DataProvider;
@@ -42,6 +48,7 @@ import java.util.stream.Collectors;
 @PageTitle("Create User Account")
 @Route(value = "create-user", layout = MainLayout.class)
 @RolesAllowed({"EDITOR", "ADMIN"})
+@JsModule("./recipe/copytoclipboard/copytoclipboard.js")
 @Slf4j
 public class CreateUsers extends VerticalLayout {
     private final DepartmentService departmentService;
@@ -64,6 +71,7 @@ public class CreateUsers extends VerticalLayout {
         this.passwordEncoder = passwordEncoder;
         this.departmentService = departmentService;
         this.academicYearService = academicYearService;
+
         // Title for the view
         add(new H3("Create Users"));
 
@@ -74,7 +82,9 @@ public class CreateUsers extends VerticalLayout {
         MemoryBuffer buffer = new MemoryBuffer();
         upload = new Upload(buffer);
         upload.setAcceptedFileTypes("text/csv");
-        upload.addSucceededListener(event -> handleFileUpload(event.getMIMEType(), buffer.getInputStream()));
+        upload.addSucceededListener(event -> {
+            handleFileUpload(event, buffer.getInputStream());
+        });
 
         userGrid = new Grid<>(User.class);
         userGrid.removeAllColumns();
@@ -113,7 +123,8 @@ public class CreateUsers extends VerticalLayout {
     }
 
 
-    private void handleFileUpload(String mimeType, InputStream stream) {
+    private void handleFileUpload(SucceededEvent event, InputStream stream) {
+        String mimeType = event.getMIMEType();
         if ("text/csv".equals(mimeType)) {
             try (Reader reader = new InputStreamReader(stream)) {
                 // Parse CSV file and process data
@@ -121,13 +132,12 @@ public class CreateUsers extends VerticalLayout {
 
                 // Use DataProvider to set items in the grid
                 userGrid.setDataProvider(DataProvider.fromStream(users.stream()));
-
-                Notification.show("File uploaded successfully", 3000, Notification.Position.TOP_CENTER);
+                NotificationUtils.createUploadSuccess("File uploaded successfully", event.getFileName());
             } catch (Exception e) {
-                Notification.show("Error processing the CSV file", 3000, Notification.Position.TOP_CENTER);
+                NotificationUtils.showErrorNotification("Error processing the CSV file");
             }
         } else {
-            Notification.show("Please select a valid CSV file", 3000, Notification.Position.TOP_CENTER);
+            NotificationUtils.showErrorNotification("Please select a valid CSV file");
         }
     }
 
@@ -158,20 +168,35 @@ public class CreateUsers extends VerticalLayout {
             AcademicYearEntity selectedAcademicYearEntity = academicYearComboBox.getValue();
 
             if (selectedRole == null) {
-                Notification.show("Please select a role", 3000, Notification.Position.BOTTOM_END);
+                NotificationUtils.showInfoNotification("Please select a role");
                 return;
             }
 
             if (selectedDepartmentEntity == null) {
-                Notification.show("Please select a department", 3000, Notification.Position.BOTTOM_END);
+                NotificationUtils.showInfoNotification("Please select a department");
                 return;
             }
 
             if (selectedRole == Role.STUDENT) {
                 if (selectedAcademicYearEntity == null) {
-                    Notification.show("Please select a academic year", 3000, Notification.Position.BOTTOM_END);
+                    NotificationUtils.showInfoNotification("Please select a academic year");
                     return;
                 }
+            }
+
+            // Check for duplicate register numbers
+            List<String> existingRegisterNumbers = userService.findExistingRegisterNumbers(users.stream()
+                    .map(User::getRegisterNumber)
+                    .collect(Collectors.toList()));
+
+            List<String> duplicateRegisterNumbers = existingRegisterNumbers.stream()
+                    .filter(registerNumber -> users.stream().anyMatch(user -> user.getRegisterNumber().equals(registerNumber)))
+                    .toList();
+
+            if (!duplicateRegisterNumbers.isEmpty()) {
+                // Display a dialog with information about duplicate register numbers
+                showDuplicateDialog(duplicateRegisterNumbers);
+                return;
             }
 
             users.forEach(user -> {
@@ -187,7 +212,7 @@ public class CreateUsers extends VerticalLayout {
             });
 
             userService.saveAll(users);
-            Notification.show("Users created successfully", 3000, Notification.Position.TOP_CENTER);
+            NotificationUtils.showSuccessNotification("Users created successfully");
         } catch (IOException | CsvException e) {
             throw new RuntimeException(e);
         }
@@ -198,7 +223,8 @@ public class CreateUsers extends VerticalLayout {
         departmentComboBox.setItemLabelGenerator(DepartmentEntity::getName);
         departmentComboBox.setItems(departmentService.findAll());
         departmentComboBox.setRequired(true);
-        departmentComboBox.setRequiredIndicatorVisible(true);
+        // departmentComboBox.setRequiredIndicatorVisible(true);
+        // TODO ONLY REQUIRED WHEN STUDENT IS SELECTED
     }
 
     private void createRoleComboBox() {
@@ -212,7 +238,14 @@ public class CreateUsers extends VerticalLayout {
         roleComboBox.setRequired(true);
         roleComboBox.addValueChangeListener(event -> {
             Role selectedRole = event.getValue();
-            academicYearComboBox.setEnabled(selectedRole == Role.STUDENT);
+            if (selectedRole == Role.STUDENT) {
+                // If student role is selected, enable the academic year ComboBox
+                academicYearComboBox.setEnabled(true);
+            } else {
+                // If any other role is selected, disable the academic year ComboBox and clear its value
+                academicYearComboBox.setEnabled(false);
+                academicYearComboBox.clear();
+            }
         });
     }
 
@@ -226,7 +259,6 @@ public class CreateUsers extends VerticalLayout {
         academicYearComboBox.setItemLabelGenerator(this::generateAcademicYearLabel);
         academicYearComboBox.setItems(academicYearService.findAll());
         academicYearComboBox.setRequired(true);
-        academicYearComboBox.setRequiredIndicatorVisible(true);
         downloadSampleCsv();
     }
 
@@ -239,4 +271,37 @@ public class CreateUsers extends VerticalLayout {
         add(buttonWrapper);
     }
 
+    private void showDuplicateDialog(List<String> duplicateRegisterNumbers) {
+        Dialog dialog = new Dialog();
+        dialog.setModal(true);
+        dialog.setCloseOnEsc(false);
+        dialog.setCloseOnOutsideClick(false);
+
+        Button copyBtn = new Button("Copy", FontAwesome.Regular.CLIPBOARD.create());
+        copyBtn.addClickListener(event ->
+                {
+                    UI.getCurrent().getPage().executeJs("window.copyToClipboard($0)",
+                            duplicateRegisterNumbers
+                                    .stream()
+                                    .collect(Collectors.joining("\n", "", "\n")));
+                    NotificationUtils.showInfoNotification("Register numbers copied to clipboard");
+                }
+        );
+
+        dialog.getFooter().add(copyBtn);
+
+        Button cancelBtn = new Button("Close", event -> dialog.close());
+        cancelBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        dialog.getFooter().add(cancelBtn);
+
+        dialog.setHeaderTitle("Duplicate Account's Detected");
+
+        Grid<String> grid = new Grid<>();
+        grid.setItems(duplicateRegisterNumbers);
+
+        grid.addColumn(String::valueOf).setHeader("Register Number");
+
+        dialog.add(grid);
+        dialog.open();
+    }
 }

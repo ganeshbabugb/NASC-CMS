@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class DepartmentService extends BaseServiceClass<DepartmentEntity> {
@@ -34,10 +33,10 @@ public class DepartmentService extends BaseServiceClass<DepartmentEntity> {
         repository.delete(item);
     }
 
-    public List<String> getAllStates() {
+/*    public List<String> getAllDepartments() {
         List<DepartmentEntity> countryEntities = repository.findAll();
         return countryEntities.stream()
                 .map(DepartmentEntity::getName)
                 .collect(Collectors.toList());
-    }
+    }*/
 }

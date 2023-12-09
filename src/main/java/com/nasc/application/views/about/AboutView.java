@@ -25,7 +25,7 @@ public class AboutView extends VerticalLayout {
         H2 header = new H2("\"Automate the Future\"");
         header.addClassNames(Margin.Top.XLARGE, Margin.Bottom.MEDIUM);
         add(header);
-        add(new Paragraph("NASC PORTAL WAS DESIGNED AND DEVELOPED BY DEPARTMENT OF COMPUTER SCIENCE"));
+        add(new Paragraph("NASC PORTAL WAS DESIGNED AND DEVELOPED BY DEPARTMENT OF COMPUTER SCIENCE & COMPUTER APPLICATION"));
 
         setSizeFull();
         setJustifyContentMode(JustifyContentMode.CENTER);

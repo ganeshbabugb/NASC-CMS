@@ -17,13 +17,9 @@ public class MarksService {
         this.marksRepository = marksRepository;
     }
 
-    //TODO remove after some times.
-    public List<MarksEntity> getAll() {
-        return marksRepository.findAll();
-    }
-
     public void saveMarks(MarksEntity marksEntity) {
         marksRepository.save(marksEntity);
+
     }
 
     public boolean existsByStudentAndSubjectAndExam(User selectedStudent, SubjectEntity selectedSubject, ExamEntity selectedExam) {

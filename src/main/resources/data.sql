@@ -1,10 +1,12 @@
 insert into application_user (version, id, username,register_number,email,password,
 bank_details_completed,
 personal_details_completed,
-address_details_completed
-) values (1, '2','admin','admin','admin@mail.com','$2a$10$aJjL4/gK8.kcGo0Cftl38uoGm9Bwbw26aDno66lBaPbOjgMY2ekB6', 0, 0, 0);
+address_details_completed)
+values (1, '1', 'admin', 'admin', 'admin@mail.com', '$2a$10$aJjL4/gK8.kcGo0Cftl38uoGm9Bwbw26aDno66lBaPbOjgMY2ekB6', 0,
+        0, 0);
 
-insert into user_roles (user_id, roles) values ('2', 'ADMIN');
+insert into user_roles (user_id, roles)
+values ('1', 'ADMIN');
 
 INSERT INTO t_districts (name) VALUES
 ('Ariyalur'),
@@ -104,26 +106,47 @@ INSERT INTO t_blood_groups (name) VALUES
 ('O+'),
 ('O-');
 
-INSERT INTO t_departments (name) VALUES
-('Tamil'),
-('English'),
-('Commerce'),
-('Commerce CA'),
-('Commerce CS'),
-('Banking Insurance'),
-('Professional Accounting'),
-('Management Studies'),
-('Computer Applications(BCA)'),
-('Bio-Technology'),
-('Costume Design & Fashion'),
-('Chemistry'),
-('Mathematics'),
-('Physics'),
-('Psychology'),
-('Computer Science'),
-('Computer Technology'),
-('Artificial Intelligence and Data Science – AI & DS'),
-('IT');
+--INSERT INTO t_departments (name) VALUES
+--('Tamil'),
+--('English'),
+--('Commerce'),
+--('Commerce CA'),
+--('Commerce CS'),
+--('Banking Insurance'),
+--('Professional Accounting'),
+--('Management Studies'),
+--('Computer Applications(BCA)'),
+--('Bio-Technology'),
+--('Costume Design & Fashion'),
+--('Chemistry'),
+--('Mathematics'),
+--('Physics'),
+--('Psychology'),
+--('Computer Science'),
+--('Computer Technology'),
+--('Artificial Intelligence and Data Science – AI & DS'),
+--('IT');
+
+INSERT INTO t_departments (name, short_name)
+VALUES ('Tamil', 'TML'),
+       ('English', 'ENG'),
+       ('Commerce', 'COM'),
+       ('Commerce CA', 'CA'),
+       ('Commerce CS', 'CS'),
+       ('Banking Insurance', 'BI'),
+       ('Professional Accounting', 'PA'),
+       ('Management Studies', 'MS'),
+       ('Computer Applications(BCA)', 'BCA'),
+       ('Bio-Technology', 'BT'),
+       ('Costume Design & Fashion', 'CDF'),
+       ('Chemistry', 'CHEM'),
+       ('Mathematics', 'MATH'),
+       ('Physics', 'PHY'),
+       ('Psychology', 'PSY'),
+       ('Computer Science', 'CS'),
+       ('Computer Technology', 'CT'),
+       ('Artificial Intelligence and Data Science – AI & DS', 'AI&DS'),
+       ('IT', 'IT');
 
 INSERT INTO t_academic_year (start_year, end_year) VALUES
 ('2020', '2023'),
@@ -137,17 +160,16 @@ INSERT INTO t_academic_year (start_year, end_year) VALUES
 ('2028', '2031'),
 ('2029', '2032');
 
-insert into application_user (version, id, username,register_number,email,password,
-bank_details_completed,
-personal_details_completed,
-address_details_completed,
-department_id
-) values (1, '1','user','user','user@mail.com','$2a$10$tx9nRaadzhGWw.j6iHlSlOZlCEkHYRK6GSmr6HLrsakj1AdljOluq', 0, 0, 0, 1);
-
-insert into user_roles (user_id, roles) values ('1', 'USER');
-
 -- Creating Editor User
 insert into application_user (version, id, username,register_number,email,password)
-values (1, '3','editor','editor123','editor@mail.com','$2a$10$2n/eokbCM.6rbaUcIF2Rs.d/49AMbEzzDdiovCCD2Acbq9Q/PZPVG');
+values (1, '2', 'editor', 'editor123', 'editor@mail.com',
+        '$2a$10$2n/eokbCM.6rbaUcIF2Rs.d/49AMbEzzDdiovCCD2Acbq9Q/PZPVG');
 
-insert into user_roles (user_id, roles) values ('3', 'EDITOR');
+insert into user_roles (user_id, roles)
+values ('2', 'EDITOR');
+
+insert into application_user (version, id, username, register_number, email, password, department_id)
+values (1, '3', 'hod', 'hod', 'hod@mail.com', '$2a$10$0cjwVZmupJyONZ2tr69APubG9OJBE3qDICTBP5w.DfXhtEIvnPWDC', 1);
+
+insert into user_roles (user_id, roles)
+values ('3', 'HOD');

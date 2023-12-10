@@ -107,7 +107,7 @@ public class CreateUsers extends VerticalLayout {
         createDepartmentComboBox();
         createAcademicYearComboBox();
 
-        academicYearComboBox.setEnabled(false);
+        academicYearComboBox.setVisible(false);
         HorizontalLayout horizontalLayout = new HorizontalLayout(roleComboBox, departmentComboBox, academicYearComboBox);
 
         // Horizontal layout for checkbox and button
@@ -223,8 +223,6 @@ public class CreateUsers extends VerticalLayout {
         departmentComboBox.setItemLabelGenerator(DepartmentEntity::getName);
         departmentComboBox.setItems(departmentService.findAll());
         departmentComboBox.setRequired(true);
-        // departmentComboBox.setRequiredIndicatorVisible(true);
-        // TODO ONLY REQUIRED WHEN STUDENT IS SELECTED
     }
 
     private void createRoleComboBox() {
@@ -240,10 +238,12 @@ public class CreateUsers extends VerticalLayout {
             Role selectedRole = event.getValue();
             if (selectedRole == Role.STUDENT) {
                 // If student role is selected, enable the academic year ComboBox
-                academicYearComboBox.setEnabled(true);
+                academicYearComboBox.setVisible(true);
+                academicYearComboBox.setRequired(true);
             } else {
                 // If any other role is selected, disable the academic year ComboBox and clear its value
-                academicYearComboBox.setEnabled(false);
+                academicYearComboBox.setVisible(false);
+                academicYearComboBox.setRequired(false);
                 academicYearComboBox.clear();
             }
         });
@@ -258,7 +258,6 @@ public class CreateUsers extends VerticalLayout {
         academicYearComboBox = new ComboBox<>("Select Academic Year");
         academicYearComboBox.setItemLabelGenerator(this::generateAcademicYearLabel);
         academicYearComboBox.setItems(academicYearService.findAll());
-        academicYearComboBox.setRequired(true);
         downloadSampleCsv();
     }
 

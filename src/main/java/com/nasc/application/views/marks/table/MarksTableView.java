@@ -116,7 +116,9 @@ public class MarksTableView extends VerticalLayout {
 
         // Add columns for each subject
         for (String subjectName : distinctSubjectNames) {
-            marksGrid.addColumn(mark -> getMarksForSubject(mark, studentMarksMap, subjectName))
+            marksGrid.addColumn(mark -> mark.isAbsent()
+                            ? "Absent"
+                            : getMarksForSubject(mark, studentMarksMap, subjectName))
                     .setHeader(subjectName);
         }
 
@@ -137,7 +139,6 @@ public class MarksTableView extends VerticalLayout {
 
     private List<MarksEntity> fetchFilteredMarks() {
 
-        // Assuming 'students' is a class member
         List<User> selectedStudents = userService.findStudentsByDepartmentAndRoleAndAcademicYear(
                 departmentFilter.getValue(), Role.STUDENT, academicYearFilter.getValue()
         );
@@ -145,12 +146,17 @@ public class MarksTableView extends VerticalLayout {
         return marksService.getAllMarksByStudents(selectedStudents);
     }
 
-    private Double getMarksForSubject(MarksEntity mark, Map<User, Map<String, Double>> studentMarksMap, String subjectName) {
+    private String getMarksForSubject(MarksEntity mark,
+                                      Map<User, Map<String, Double>> studentMarksMap,
+                                      String subjectName) {
         Map<String, Double> subjectMarks = studentMarksMap.get(mark.getStudent());
+
+        if (mark.isAbsent()) return "Absent";
+
         if (subjectMarks != null && subjectMarks.containsKey(subjectName)) {
-            return subjectMarks.get(subjectName);
+            return String.valueOf(subjectMarks.get(subjectName));
         } else {
-            return 0.0;
+            return "N/A";
         }
     }
 

@@ -1,6 +1,7 @@
 package com.nasc.application.views.about;
 
 import com.nasc.application.views.MainLayout;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
@@ -26,6 +27,12 @@ public class AboutView extends VerticalLayout {
         header.addClassNames(Margin.Top.XLARGE, Margin.Bottom.MEDIUM);
         add(header);
         add(new Paragraph("NASC PORTAL WAS DESIGNED AND DEVELOPED BY DEPARTMENT OF COMPUTER SCIENCE & COMPUTER APPLICATION"));
+
+        Button installButton = new Button("Download / Install NASC PWA");
+        installButton.addClickListener(e -> {
+            getUI().ifPresent(ui -> ui.getPage().executeJs("window.location.href = 'http://localhost:8080';"));
+        });
+        add(installButton);
 
         setSizeFull();
         setJustifyContentMode(JustifyContentMode.CENTER);

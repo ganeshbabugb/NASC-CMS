@@ -1,4 +1,4 @@
-package com.nasc.application.views.addressform;
+package com.nasc.application.views.forms.adderss;
 
 import com.nasc.application.data.model.AddressDetails;
 import com.nasc.application.data.model.User;

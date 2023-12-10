@@ -5,19 +5,19 @@ import com.nasc.application.data.model.User;
 import com.nasc.application.security.AuthenticatedUser;
 import com.nasc.application.views.about.AboutView;
 import com.nasc.application.views.activeusers.ActiveUsersView;
-import com.nasc.application.views.addressform.AddressFormView;
-import com.nasc.application.views.addressmasterdetail.AddressMasterDetailView;
-import com.nasc.application.views.bankdetailsform.BankDetailsFormView;
-import com.nasc.application.views.createstudents.CreateUsers;
-import com.nasc.application.views.createsubjectcrud.CreateSubjectCrud;
+import com.nasc.application.views.address.AddressMasterDetailView;
+import com.nasc.application.views.auth.create.CreateUsers;
 import com.nasc.application.views.dashboard.DashboardView;
-import com.nasc.application.views.markentryview.MarkEntryView;
-import com.nasc.application.views.marktableview.MarksTableView;
+import com.nasc.application.views.forms.adderss.AddressFormView;
+import com.nasc.application.views.forms.bank.BankDetailsFormView;
+import com.nasc.application.views.forms.personal.PersonalFormView;
+import com.nasc.application.views.marks.entry.MarkEntryView;
+import com.nasc.application.views.marks.table.MarksTableView;
 import com.nasc.application.views.password.PasswordChangeView;
-import com.nasc.application.views.personform.PersonFormView;
-import com.nasc.application.views.professor.ProfessorStatusView;
-import com.nasc.application.views.studentmasterdetails.StudentMasterDetailsView;
-import com.nasc.application.views.studentsstatus.StudentsStatusView;
+import com.nasc.application.views.professor.status.ProfessorStatusView;
+import com.nasc.application.views.student.StudentMasterDetailsView;
+import com.nasc.application.views.student.status.StudentsStatusView;
+import com.nasc.application.views.subject.CreateSubjectCrud;
 import com.nasc.application.views.valuevalut.ValueVaultView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -82,8 +82,8 @@ public class MainLayout extends AppLayout {
             nav.addItem(new SideNavItem("Dashboard", DashboardView.class, LineAwesomeIcon.CHART_AREA_SOLID.create()));
 
         }
-        if (accessChecker.hasAccess(PersonFormView.class)) {
-            nav.addItem(new SideNavItem("Person Form", PersonFormView.class, LineAwesomeIcon.USER.create()));
+        if (accessChecker.hasAccess(PersonalFormView.class)) {
+            nav.addItem(new SideNavItem("Person Form", PersonalFormView.class, LineAwesomeIcon.USER.create()));
 
         }
         if (accessChecker.hasAccess(AddressFormView.class)) {

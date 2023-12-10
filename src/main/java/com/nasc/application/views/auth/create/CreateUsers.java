@@ -1,4 +1,4 @@
-package com.nasc.application.views.createstudents;
+package com.nasc.application.views.auth.create;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.nasc.application.data.model.AcademicYearEntity;
@@ -234,7 +234,7 @@ public class CreateUsers extends VerticalLayout {
         roleComboBox.setItems(Arrays.stream(Role.values())
                 .filter(role -> !Arrays.asList(Role.EDITOR, Role.ADMIN).contains(role))
                 .collect(Collectors.toList()));
-
+        roleComboBox.setItemLabelGenerator(Role::getDisplayName);
         roleComboBox.setRequired(true);
         roleComboBox.addValueChangeListener(event -> {
             Role selectedRole = event.getValue();

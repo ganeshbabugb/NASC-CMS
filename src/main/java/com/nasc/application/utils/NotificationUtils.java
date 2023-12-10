@@ -11,6 +11,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 
 public class NotificationUtils {
+
     // Duration
     private static final int SUCCESS_NOTIFICATION_DURATION = 2000;
     private static final int INFO_NOTIFICATION_DURATION = 3000;
@@ -24,23 +25,36 @@ public class NotificationUtils {
     private static final Notification.Position WARNING_NOTIFICATION_POSITION = Notification.Position.BOTTOM_CENTER;
 
     public static void showSuccessNotification(String message) {
-        showNotification(message, SUCCESS_NOTIFICATION_DURATION, SUCCESS_NOTIFICATION_POSITION);
+        showNotification(message, SUCCESS_NOTIFICATION_DURATION, SUCCESS_NOTIFICATION_POSITION, VaadinIcon.CHECK_CIRCLE.create());
     }
 
     public static void showInfoNotification(String message) {
-        showNotification(message, INFO_NOTIFICATION_DURATION, INFO_NOTIFICATION_POSITION);
+        showNotification(message, INFO_NOTIFICATION_DURATION, INFO_NOTIFICATION_POSITION, VaadinIcon.INFO_CIRCLE.create());
     }
 
     public static void showErrorNotification(String message) {
-        showNotification(message, ERROR_NOTIFICATION_DURATION, ERROR_NOTIFICATION_POSITION);
+        showNotification(message, ERROR_NOTIFICATION_DURATION, ERROR_NOTIFICATION_POSITION, VaadinIcon.EXCLAMATION_CIRCLE.create());
     }
 
     public static void showWarningNotification(String message) {
-        showNotification(message, WARNING_NOTIFICATION_DURATION, WARNING_NOTIFICATION_POSITION);
+        showNotification(message, WARNING_NOTIFICATION_DURATION, WARNING_NOTIFICATION_POSITION, VaadinIcon.WARNING.create());
     }
 
-    public static void showNotification(String message, int duration, Notification.Position position) {
-        Notification notification = new Notification(message, duration, position);
+    private static void showNotification(String message, int duration, Notification.Position position, Icon icon) {
+        Notification notification = new Notification();
+
+        Div messageDiv = new Div(new Text(message));
+        messageDiv.getStyle().set("font-weight", "600");
+
+        Icon closeIcon = VaadinIcon.CLOSE.create();
+        closeIcon.addClickListener(event -> notification.close());
+
+        HorizontalLayout layout = new HorizontalLayout(icon, messageDiv, closeIcon);
+        layout.setAlignItems(FlexComponent.Alignment.CENTER);
+
+        notification.add(layout);
+        notification.setDuration(duration);
+        notification.setPosition(position);
         notification.open();
     }
 

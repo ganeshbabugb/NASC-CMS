@@ -1,4 +1,4 @@
-package com.nasc.application.views.personform;
+package com.nasc.application.views.forms.personal;
 
 import com.nasc.application.data.model.PersonalDetails;
 import com.nasc.application.data.model.User;
@@ -29,7 +29,7 @@ import jakarta.annotation.security.RolesAllowed;
 @Route(value = "personal-information-form", layout = MainLayout.class)
 @RolesAllowed({"HOD", "PROFESSOR", "STUDENT"})
 @Uses(Icon.class)
-public class PersonFormView extends Composite<VerticalLayout> {
+public class PersonalFormView extends Composite<VerticalLayout> {
 
     private final UserService userService;
     private final VerticalLayout mainLayout = new VerticalLayout();
@@ -45,7 +45,7 @@ public class PersonFormView extends Composite<VerticalLayout> {
     private final Button saveButton = new Button();
     private final BeanValidationBinder<PersonalDetails> binder = new BeanValidationBinder<>(PersonalDetails.class);
 
-    public PersonFormView(UserService userService) {
+    public PersonalFormView(UserService userService) {
         this.userService = userService;
         configureLayout();
         initFormWithExistingDetails(); // Initialize the form with existing personal details

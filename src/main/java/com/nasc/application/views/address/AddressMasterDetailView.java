@@ -1,4 +1,4 @@
-package com.nasc.application.views.addressmasterdetail;
+package com.nasc.application.views.address;
 
 import com.nasc.application.data.model.AddressDetails;
 import com.nasc.application.services.CountryService;

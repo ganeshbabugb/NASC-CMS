@@ -1,4 +1,4 @@
-package com.nasc.application.views.createsubjectcrud;
+package com.nasc.application.views.subject;
 
 import com.nasc.application.data.model.SubjectEntity;
 import com.nasc.application.data.model.enums.MajorOfPaper;
@@ -43,18 +43,25 @@ public class CreateSubjectCrud extends Div {
     }
 
     private CrudEditor<SubjectEntity> createEditor() {
+        MajorOfPaper[] majorOfPaperEnum = MajorOfPaper.values();
+        PaperType[] paperTypeEnum = PaperType.values();
+        Semester[] semesterEnum = Semester.values();
+
         TextField subjectNameField = new TextField("Subject Name");
         TextField subjectShortNameField = new TextField("Subject Short Name");
         TextField subjectCodeField = new TextField("Subject Code");
 
         ComboBox<PaperType> typeOfPaperComboBox = new ComboBox<>("Type of Paper");
-        typeOfPaperComboBox.setItems(PaperType.values());
+        typeOfPaperComboBox.setItems(paperTypeEnum);
+        typeOfPaperComboBox.setItemLabelGenerator(PaperType::getDisplayName);
 
         ComboBox<MajorOfPaper> majorOfPaperComboBox = new ComboBox<>("Major of Paper");
-        majorOfPaperComboBox.setItems(MajorOfPaper.values());
+        majorOfPaperComboBox.setItems(majorOfPaperEnum);
+        majorOfPaperComboBox.setItemLabelGenerator(MajorOfPaper::getDisplayName);
 
         ComboBox<Semester> semesterComboBox = new ComboBox<>("Semester");
-        semesterComboBox.setItems(Semester.values());
+        semesterComboBox.setItems(semesterEnum);
+        semesterComboBox.setItemLabelGenerator(Semester::getDisplayName);
 
         FormLayout form = new FormLayout(subjectNameField, subjectShortNameField, subjectCodeField,
                 typeOfPaperComboBox, majorOfPaperComboBox, semesterComboBox);

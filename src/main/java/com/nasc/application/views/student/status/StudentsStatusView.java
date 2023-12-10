@@ -1,8 +1,10 @@
-package com.nasc.application.views.professor;
+package com.nasc.application.views.student.status;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
+import com.nasc.application.data.model.AcademicYearEntity;
 import com.nasc.application.data.model.User;
 import com.nasc.application.data.model.enums.Role;
+import com.nasc.application.services.AcademicYearService;
 import com.nasc.application.services.UserService;
 import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
@@ -42,32 +44,41 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-@PageTitle("Professor Status")
-@Route(value = "professor-status", layout = MainLayout.class)
-@RolesAllowed({"HOD"})
-public class ProfessorStatusView extends VerticalLayout {
+@PageTitle("Students Status")
+@Route(value = "students-status", layout = MainLayout.class)
+@RolesAllowed({"HOD", "PROFESSOR"})
+public class StudentsStatusView extends VerticalLayout {
     private final UserService userService;
-    private final Anchor downloadLink;
+    private final AcademicYearService academicYearService;
     private final Button menuButton = new Button("Show/Hide", FontAwesome.Solid.LIST_CHECK.create());
-    private final ProfessorStatusView.ColumnToggleContextMenu columnToggleContextMenu = new ProfessorStatusView.ColumnToggleContextMenu(menuButton);
+    private final Anchor downloadLink;
+    private final ColumnToggleContextMenu columnToggleContextMenu = new ColumnToggleContextMenu(menuButton);
     private Grid<User> grid;
     private GridListDataView<User> gridListDataView;
     private Grid.Column<User> userColumn;
+    private ComboBox<AcademicYearEntity> academicYearFilter;
+    //Layouts
+    private HorizontalLayout filterLayout;
+    private HorizontalLayout exportAndColumnListLayout;
 
-    public ProfessorStatusView(UserService service) {
+    public StudentsStatusView(UserService service, AcademicYearService academicYearService) {
         this.userService = service;
-        downloadLink = createDownloadLink();  // Add this line to create the download link
-        addClassName("professor-status-view");
+        this.academicYearService = academicYearService;
+        addClassName("students-status-view");
         setSizeFull();
+        createAcademicYearFilterComponent();
+        createExportAndColumnListLayout();
+        downloadLink = createDownloadLink();
+        exportAndColumnListLayout.add(menuButton, downloadLink);
         createGrid();
-        addData();
+        createFilterLayout();
+        filterLayout.add(academicYearFilter);
+        add(filterLayout, exportAndColumnListLayout, grid);
+    }
 
-        HorizontalLayout menuButtonLayout = new HorizontalLayout(menuButton, downloadLink);
-        menuButtonLayout.setWidthFull();
-        menuButtonLayout.setJustifyContentMode(JustifyContentMode.END);
-        menuButtonLayout.setAlignItems(Alignment.CENTER);
-
-        add(menuButtonLayout, grid);
+    private void createFilterLayout() {
+        filterLayout = new HorizontalLayout();
+        filterLayout.setSpacing(true);
     }
 
     private static FontAwesome.Regular.Icon getThumbsUpIcon() {
@@ -82,6 +93,15 @@ public class ProfessorStatusView extends VerticalLayout {
         return icon;
     }
 
+    private void createExportAndColumnListLayout() {
+        exportAndColumnListLayout = new HorizontalLayout();
+        exportAndColumnListLayout.setWidthFull();
+        exportAndColumnListLayout.setJustifyContentMode(JustifyContentMode.END);
+        exportAndColumnListLayout.setAlignItems(Alignment.CENTER);
+        exportAndColumnListLayout.setSpacing(true);
+        exportAndColumnListLayout.getElement().getStyle().set("margin-bottom", "1em");
+    }
+
     private Anchor createDownloadLink() {
         Anchor link = new Anchor();
         link.getElement().setAttribute("download", true);
@@ -90,16 +110,28 @@ public class ProfessorStatusView extends VerticalLayout {
         return link;
     }
 
+    private void createAcademicYearFilterComponent() {
+        List<AcademicYearEntity> academicYears = academicYearService.findAll();
+        academicYearFilter = new ComboBox<>();
+        academicYearFilter.setLabel("Filter by Academic Year");
+        academicYearFilter.setClearButtonVisible(false);
+        academicYearFilter.setItems(academicYears);
+        academicYearFilter.setItemLabelGenerator(this::generateAcademicYearLabel);
+        academicYearFilter.addValueChangeListener(this::handleAcademicYearFilterChange);
+    }
+
     private void createGrid() {
         createGridComponent();
         addColumnsToGrid();
         addFiltersToGrid();
     }
 
-    private void addData() {
-        List<User> users = getCurrentUserDeptProfessors();
-        gridListDataView = grid.setItems(users);
-        exportExport(users);
+    private String generateAcademicYearLabel(AcademicYearEntity academicYear) {
+        return academicYear.getStartYear() + " - " + academicYear.getEndYear();
+    }
+
+    private void handleAcademicYearFilterChange(HasValue.ValueChangeEvent<AcademicYearEntity> event) {
+        refreshGridData();
     }
 
     private void addFiltersToGrid() {
@@ -205,8 +237,22 @@ public class ProfessorStatusView extends VerticalLayout {
 
     private void createGridComponent() {
         grid = new Grid<>();
-        grid.addThemeVariants(GridVariant.LUMO_COMPACT);
         grid.setHeight("100%");
+        grid.addThemeVariants(GridVariant.LUMO_COMPACT);
+    }
+
+    private void refreshGridData() {
+        AcademicYearEntity academicYearEntity = academicYearFilter.getValue();
+        if (academicYearEntity != null) {
+            List<User> users = getUsersByRoleForLoggedInUserDepartment(academicYearEntity);
+            if (users.isEmpty()) {
+                if (users.isEmpty()) {
+                    NotificationUtils.showWarningNotification("No information recorded for the selected academic year");
+                }
+            }
+            gridListDataView = grid.setItems(users);
+            exportToCSV(users);
+        }
     }
 
     private void addColumnsToGrid() {
@@ -262,8 +308,8 @@ public class ProfessorStatusView extends VerticalLayout {
         columnToggleContextMenu.addColumnToggleItem("All Forms Completed", allFormsCompletedColumn);
     }
 
-    private List<User> getCurrentUserDeptProfessors() {
-        return userService.findUsersByDepartmentAndRole(Role.PROFESSOR);
+    private List<User> getUsersByRoleForLoggedInUserDepartment(AcademicYearEntity value) {
+        return userService.findStudentsByDepartmentAndRoleAndAcademicYear(Role.STUDENT, value);
     }
 
     private Icon createIcon(VaadinIcon vaadinIcon) {
@@ -272,16 +318,18 @@ public class ProfessorStatusView extends VerticalLayout {
         return icon;
     }
 
-    private void exportExport(List<User> users) {
+    private void exportToCSV(List<User> users) {
 
         try {
+            AcademicYearEntity academicYearEntity = academicYearFilter.getValue();
+            // Prepare data for export
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
             try (CSVWriter csvWriter = new CSVWriter(new OutputStreamWriter(byteArrayOutputStream, StandardCharsets.UTF_8))) {
 
                 // Write header
                 String[] header = {
-                        "Username", "Register Number", "Email", "Department",
+                        "Username", "Register Number", "Email", "Department", "Academic Year",
                         "Bank Name", "Account Holder Name", "Account Number", "IFSC Code", "Branch Name",
                         "Branch Address", "PAN Number", "First Name", "Last Name", "Phone Number",
                         "Birthday", "Gender", "Address", "Pin code", "City", "State", "Country"
@@ -296,6 +344,7 @@ public class ProfessorStatusView extends VerticalLayout {
                     data.add(user.getRegisterNumber());
                     data.add(user.getEmail());
                     data.add(user.getDepartment().toString());
+                    data.add(academicYearEntity.getStartYear() + " - " + academicYearEntity.getEndYear());
 
                     // Bank details (conditionally added)
                     if (Boolean.TRUE.equals(user.getBankDetailsCompleted())) {
@@ -334,15 +383,21 @@ public class ProfessorStatusView extends VerticalLayout {
                         data.addAll(Collections.nCopies(5, ""));
                     }
 
-                    // Convert the list to an array and write to CSV
+                    // Convert the list to an array and write to CSV`
                     csvWriter.writeNext(data.toArray(new String[0]));
                 }
 
-                String fileName = "STAFFS.csv";
+                String fileName = "STUDENTS_"
+                        + academicYearFilter.getValue().getStartYear()
+                        + "_"
+                        + academicYearFilter.getValue().getEndYear()
+                        + ".csv";
+
                 StreamResource resource = new StreamResource(fileName,
                         () -> new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
 
                 downloadLink.setHref(resource);
+
             }
         } catch (IOException e) {
             NotificationUtils.showErrorNotification("Error exporting data to CSV");
@@ -364,5 +419,4 @@ public class ProfessorStatusView extends VerticalLayout {
             menuItem.setKeepOpen(true);
         }
     }
-
 }

@@ -1,4 +1,4 @@
-package com.nasc.application.views.bankdetailsform;
+package com.nasc.application.views.forms.bank;
 
 import com.nasc.application.data.model.BankDetails;
 import com.nasc.application.data.model.User;

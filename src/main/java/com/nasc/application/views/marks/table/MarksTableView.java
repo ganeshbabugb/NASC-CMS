@@ -1,4 +1,4 @@
-package com.nasc.application.views.marktableview;
+package com.nasc.application.views.marks.table;
 
 import com.nasc.application.data.model.AcademicYearEntity;
 import com.nasc.application.data.model.DepartmentEntity;
@@ -63,9 +63,11 @@ public class MarksTableView extends VerticalLayout {
         // Create filter components
         semesterFilter = new ComboBox<>("Filter by Semester");
         semesterFilter.setItems(semester);
+        semesterFilter.setItemLabelGenerator(Semester::getDisplayName);
 
         examTypeFilter = new ComboBox<>("Filter by Exam Type");
         examTypeFilter.setItems(examType);
+        examTypeFilter.setItemLabelGenerator(ExamType::getDisplayName);
         examTypeFilter.addValueChangeListener(event -> updateSubjectFilter());
 
         academicYearFilter = new ComboBox<>("Filter by Academic Year");

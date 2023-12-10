@@ -1,4 +1,4 @@
-package com.nasc.application.views.markentryview;
+package com.nasc.application.views.marks.entry;
 
 import com.nasc.application.data.components.Divider;
 import com.nasc.application.data.model.*;
@@ -200,12 +200,17 @@ public class MarkEntryView extends Div {
 
         // TODO : ADD HOD ROLES TO THE DROP DOWN!.
         List<User> professors = userService.findUsersByRole(Role.PROFESSOR);
+        ExamType[] examTypeEnum = ExamType.values();
 
         examDateDatePicker = new DatePicker("Exam Date");
-        examTypeComboBox = new ComboBox<>("Exam Type", ExamType.values());
+        examTypeComboBox = new ComboBox<>("Exam Type", examTypeEnum);
+        examTypeComboBox.setItemLabelGenerator(ExamType::getDisplayName);
+
         minMarksIntegerField = new IntegerField("Minimum Marks");
         maxMarksIntegerField = new IntegerField("Maximum Marks");
+
         portionCoveredNumberField = new NumberField("Portion Covered");
+
         examDurationIntegerField = new IntegerField("Exam Duration (minutes)");
         examCorrectionDatePicker = new DatePicker("Exam Correction Date");
 

@@ -145,14 +145,16 @@ public class MarkEntryView extends Div {
 
         // Populate department and semester dropdowns
         List<DepartmentEntity> departments = departmentService.findAll();
-        List<Semester> semesters = List.of(Semester.values());
+        Semester[] semester = Semester.values();
         List<AcademicYearEntity> academicYears = academicYearService.findAll();
 
         //Creating forms
         markFormLayout = new FormLayout();
 
         departmentComboBox = new ComboBox<>("Select Department", departments);
-        semesterComboBox = new ComboBox<>("Select Semester", semesters);
+        semesterComboBox = new ComboBox<>("Select Semester");
+        semesterComboBox.setItems(semester);
+        semesterComboBox.setItemLabelGenerator(Semester::getDisplayName);
 
         // Setup subject dropdown and subject code text-field
         subjectComboBox = new ComboBox<>("Select Subject");
@@ -357,23 +359,27 @@ public class MarkEntryView extends Div {
         }
     }
 
-    private void updateMarks(User student,
-                             SubjectEntity subject,
-                             ExamEntity exam,
-                             Double marksObtained,
-                             boolean isAbsent) {
+    private void updateMarks(User student, SubjectEntity subject, ExamEntity exam, Double marksObtained, boolean isAbsent) {
+        MarksEntity existingMarks = marksService.getMarksByStudentAndSubjectAndExam(student, subject, exam);
 
-        if (!isAbsent) {
-            MarksEntity existingMarks = marksService.getMarksByStudentAndSubjectAndExam(student, subject, exam);
+        if (existingMarks != null) {
+            // If marksObtained is null, consider it as an absent case
+            existingMarks.setAbsent(isAbsent);
 
-            // Update the marks and save
-            existingMarks.setMarksObtained(marksObtained);
+            if (!isAbsent) {
+                // If marksObtained is not null, update the marks
+                existingMarks.setMarksObtained(marksObtained);
+            } else {
+                // If the user is marked as absent, set obtained marks to null
+                existingMarks.setMarksObtained(null);
+            }
+
+            // Save the updated marks
             marksService.saveMarks(existingMarks);
 
             // Display a success notification
-            NotificationUtils.showSuccessNotification("Marks saved successfully");
+            NotificationUtils.showSuccessNotification("Marks updated successfully");
         }
-
     }
 
     private void initExamComboBoxes() {
@@ -491,6 +497,7 @@ public class MarkEntryView extends Div {
 
             Checkbox absentCheckbox = new Checkbox("Absent");
             absentCheckbox.addValueChangeListener(event -> {
+                studentTextField.clear();
                 studentTextField.setEnabled(!event.getValue()); // Disable Student field if the user is absent.
             });
 
@@ -512,7 +519,7 @@ public class MarkEntryView extends Div {
             }
 
             // Create a "Save" button for each student
-            FormLayout studentLayout = new FormLayout(studentTextField, saveButton);
+            FormLayout studentLayout = new FormLayout(studentTextField, absentCheckbox, saveButton);
 
             secondaryLayout.add(studentLayout);
         });

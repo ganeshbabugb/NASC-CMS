@@ -11,13 +11,13 @@ public class MarksEntity {
 
     private Double marksObtained;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     private User student;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     private SubjectEntity subject;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     private ExamEntity exam;
 
     private boolean absent;

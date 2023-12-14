@@ -19,6 +19,9 @@ import javax.sql.DataSource;
 @PWA(
         name = "NASC CMS",
         shortName = "CMS",
+        backgroundColor = "#233348",
+        themeColor = "#233348",
+        iconPath = "./icons/icon.png",
         offlinePath = "offline.html",
         offlineResources = {"./images/offline.png"}
 )

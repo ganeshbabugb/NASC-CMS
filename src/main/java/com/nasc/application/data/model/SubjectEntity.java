@@ -6,6 +6,8 @@ import com.nasc.application.data.model.enums.PaperType;
 import com.nasc.application.data.model.enums.Semester;
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "t_subjects")
 public class SubjectEntity implements BaseEntity {
@@ -100,5 +102,17 @@ public class SubjectEntity implements BaseEntity {
 
     public void setSemester(Semester semester) {
         this.semester = semester;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SubjectEntity subject)) return false;
+        return Objects.equals(getId(), subject.getId()) && Objects.equals(getSubjectName(), subject.getSubjectName()) && Objects.equals(getSubjectShortForm(), subject.getSubjectShortForm()) && Objects.equals(getSubjectCode(), subject.getSubjectCode()) && getPaperType() == subject.getPaperType() && getMajorOfPaper() == subject.getMajorOfPaper() && Objects.equals(getDepartment(), subject.getDepartment()) && getSemester() == subject.getSemester();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(), getSubjectName(), getSubjectShortForm(), getSubjectCode(), getPaperType(), getMajorOfPaper(), getDepartment(), getSemester());
     }
 }

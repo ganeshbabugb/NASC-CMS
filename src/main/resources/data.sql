@@ -106,26 +106,26 @@ INSERT INTO t_blood_groups (name) VALUES
 ('O+'),
 ('O-');
 
---INSERT INTO t_departments (name) VALUES
---('Tamil'),
---('English'),
---('Commerce'),
---('Commerce CA'),
---('Commerce CS'),
---('Banking Insurance'),
---('Professional Accounting'),
---('Management Studies'),
---('Computer Applications(BCA)'),
---('Bio-Technology'),
---('Costume Design & Fashion'),
---('Chemistry'),
---('Mathematics'),
---('Physics'),
---('Psychology'),
---('Computer Science'),
---('Computer Technology'),
---('Artificial Intelligence and Data Science – AI & DS'),
---('IT');
+# INSERT INTO t_departments (name) VALUES
+# ('Tamil'),
+# ('English'),
+# ('Commerce'),
+# ('Commerce CA'),
+# ('Commerce CS'),
+# ('Banking Insurance'),
+# ('Professional Accounting'),
+# ('Management Studies'),
+# ('Computer Applications(BCA)'),
+# ('Bio-Technology'),
+# ('Costume Design & Fashion'),
+# ('Chemistry'),
+# ('Mathematics'),
+# ('Physics'),
+# ('Psychology'),
+# ('Computer Science'),
+# ('Computer Technology'),
+# ('Artificial Intelligence and Data Science – AI & DS'),
+# ('IT');
 
 INSERT INTO t_departments (name, short_name)
 VALUES ('Tamil', 'TML'),

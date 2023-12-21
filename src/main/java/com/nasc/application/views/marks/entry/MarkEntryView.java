@@ -8,6 +8,7 @@ import com.nasc.application.data.model.enums.Semester;
 import com.nasc.application.security.AuthenticatedUser;
 import com.nasc.application.services.*;
 import com.nasc.application.utils.NotificationUtils;
+import com.nasc.application.utils.UIUtils;
 import com.nasc.application.views.MainLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -43,6 +44,7 @@ public class MarkEntryView extends Div {
     private final VerticalLayout primaryLayout;
     private final VerticalLayout secondaryLayout;
     private final SplitLayout splitLayout;
+
     // service
     private final ExamService examService;
     private final DepartmentService departmentService;
@@ -50,8 +52,7 @@ public class MarkEntryView extends Div {
     private final MarksService marksService;
     private final UserService userService;
     private final AcademicYearService academicYearService;
-    // Global declaration for current user
-    private final User currentUser;
+
     private ComboBox<DepartmentEntity> departmentComboBox;
     private ComboBox<Semester> semesterComboBox;
     private ComboBox<SubjectEntity> subjectComboBox;
@@ -60,22 +61,26 @@ public class MarkEntryView extends Div {
     private TextField typeOfPaperTextField;
     private TextField subjectCodeTextField;
     private ComboBox<AcademicYearEntity> academicYearComboBox;
+
     //Exam Fields
     private DatePicker examDateDatePicker;
     private ComboBox<ExamType> examTypeComboBox;
-    private IntegerField minMarksIntegerField;
-    private IntegerField maxMarksIntegerField;
+    // Global declaration for current user
+    private final User currentUser;
+    private NumberField minMarksNumberField;
     private NumberField portionCoveredNumberField;
     private IntegerField examDurationIntegerField;
     private DatePicker examCorrectionDatePicker;
     private MultiSelectComboBox<User> professorMultiSelectComboBox;
     private Button createExamButton;
-    //Student and Exam ComboBoxes
-    private ComboBox<ExamEntity> examComboBox;
+    private NumberField maxMarksNumberField;
+
     //Layouts
     private FormLayout markFormLayout;
     private FormLayout examFormLayout;
     private FormLayout formLayout;
+    //Exam ComboBoxes
+    private ComboBox<ExamEntity> examComboBox;
 
     @Autowired
     public MarkEntryView(DepartmentService departmentService,
@@ -100,7 +105,7 @@ public class MarkEntryView extends Div {
         secondaryLayout.setMaxHeight("90vh");
         splitLayout = new SplitLayout(primaryLayout, secondaryLayout);
 
-        currentUser = authenticatedUser.get().get();
+        currentUser = authenticatedUser.get().orElse(null); // If user not exists then it will be null
 
         initMarkForm();
 
@@ -110,13 +115,9 @@ public class MarkEntryView extends Div {
         initExamForm();
 
 
-        departmentComboBox.addValueChangeListener(event -> {
-            updateSubjectOptions();
-        });
+        departmentComboBox.addValueChangeListener(event -> updateSubjectOptions());
 
-        semesterComboBox.addValueChangeListener(event -> {
-            updateSubjectOptions();
-        });
+        semesterComboBox.addValueChangeListener(event -> updateSubjectOptions());
 
         examComboBox.addValueChangeListener(event -> {
             // Fetch the selected exam
@@ -126,9 +127,7 @@ public class MarkEntryView extends Div {
             updateStudentFieldsForExam(selectedExam);
         });
 
-        semesterComboBox.addValueChangeListener(event -> {
-            updateSubjectOptions();
-        });
+        semesterComboBox.addValueChangeListener(event -> updateSubjectOptions());
 
         subjectComboBox.addValueChangeListener(event -> {
 
@@ -195,6 +194,30 @@ public class MarkEntryView extends Div {
         add(splitLayout);
     }
 
+    // HELPER
+    private static Checkbox getCheckbox(NumberField studentTextField) {
+        Checkbox absentCheckbox = new Checkbox("Absent");
+        absentCheckbox.addValueChangeListener(event -> {
+            if (event.getValue()) {
+                // If absent, set text field to 0.0 and make it read-only
+                studentTextField.setValue(0.0);
+                studentTextField.setReadOnly(true);
+            } else {
+                // If not absent, clear the text field and make it editable
+                studentTextField.clear();
+                studentTextField.setReadOnly(false);
+            }
+        });
+        return absentCheckbox;
+    }
+
+    private void createExam() {
+        ExamEntity newExam = createNewExam(); // Implement this method to create a new exam
+        examComboBox.setItems(examService.getAllExams()); // Refresh the examComboBox
+        examComboBox.setValue(newExam); // Set the newly created exam as the selected exam
+        handleExamSelection(); // Trigger the handleExamSelection logic
+    }
+
     private void initExamForm() {
 
         //Creating exam form
@@ -208,8 +231,8 @@ public class MarkEntryView extends Div {
         examTypeComboBox = new ComboBox<>("Exam Type", examTypeEnum);
         examTypeComboBox.setItemLabelGenerator(ExamType::getDisplayName);
 
-        minMarksIntegerField = new IntegerField("Minimum Marks");
-        maxMarksIntegerField = new IntegerField("Maximum Marks");
+        minMarksNumberField = new NumberField("Minimum Marks");
+        maxMarksNumberField = new NumberField("Maximum Marks");
 
         portionCoveredNumberField = new NumberField("Portion Covered");
 
@@ -237,8 +260,8 @@ public class MarkEntryView extends Div {
         examFormLayout.add(
                 examDateDatePicker,
                 examTypeComboBox,
-                minMarksIntegerField,
-                maxMarksIntegerField,
+                minMarksNumberField,
+                maxMarksNumberField,
                 portionCoveredNumberField,
                 examDurationIntegerField,
                 examCorrectionDatePicker,
@@ -248,43 +271,6 @@ public class MarkEntryView extends Div {
         );
 
         primaryLayout.add(examFormLayout);
-    }
-
-    private void createExam() {
-        ExamEntity newExam = createNewExam(); // Implement this method to create a new exam
-        examComboBox.setItems(examService.getAllExams()); // Refresh the examComboBox
-        examComboBox.setValue(newExam); // Set the newly created exam as the selected exam
-        handleExamSelection(); // Trigger the handleExamSelection logic
-    }
-
-    private ExamEntity createNewExam() {
-        // Implement the logic to create a new exam
-        ExamEntity exam = new ExamEntity();
-        exam.setDepartment(departmentComboBox.getValue());
-        exam.setSemester(semesterComboBox.getValue());
-        exam.setExamType(examTypeComboBox.getValue());
-        exam.setExamDate(examDateDatePicker.getValue());
-        exam.setSubject(subjectComboBox.getValue());
-        exam.setMinMarks(minMarksIntegerField.getMin());
-        exam.setMaxMarks(maxMarksIntegerField.getMax());
-        exam.setPortionCovered(portionCoveredNumberField.getValue());
-        exam.setExamDuration(examDurationIntegerField.getValue());
-        exam.setExamCorrectionDate(examCorrectionDatePicker.getValue());
-
-        Set<User> selectedProfessors = professorMultiSelectComboBox.getSelectedItems();
-        if (!selectedProfessors.isEmpty()) {
-            // Add both the current user and selected professors to the responsibleUsers set
-            Set<User> responsibleUsers = new HashSet<>(selectedProfessors);
-            responsibleUsers.add(currentUser);
-
-            exam.setResponsibleUsers(responsibleUsers);
-        } else {
-            // If no professors are selected, only add the current user
-            exam.setResponsibleUsers(Set.of(currentUser));
-        }
-
-        examService.saveExam(exam); // Save the new exam
-        return exam;
     }
 
     private void updateSubjectOptions() {
@@ -327,75 +313,109 @@ public class MarkEntryView extends Div {
         }
     }
 
-    private void createNewMarks(User student,
-                                SubjectEntity subject,
-                                ExamEntity exam,
-                                Double marksObtained,
-                                boolean isAbsent) {
+    private ExamEntity createNewExam() {
+        // Implement the logic to create a new exam
+        ExamEntity exam = new ExamEntity();
+        exam.setDepartment(departmentComboBox.getValue());
+        exam.setSemester(semesterComboBox.getValue());
+        exam.setExamType(examTypeComboBox.getValue());
+        exam.setExamDate(examDateDatePicker.getValue());
+        exam.setSubject(subjectComboBox.getValue());
+        exam.setMinMarks(minMarksNumberField.getValue());
+        exam.setMaxMarks(maxMarksNumberField.getValue());
+        exam.setPortionCovered(portionCoveredNumberField.getValue());
+        exam.setExamDuration(examDurationIntegerField.getValue());
+        exam.setExamCorrectionDate(examCorrectionDatePicker.getValue());
+
+        Set<User> selectedProfessors = professorMultiSelectComboBox.getSelectedItems();
+        if (!selectedProfessors.isEmpty()) {
+            // Add both the current user and selected professors to the responsibleUsers set
+            Set<User> responsibleUsers = new HashSet<>(selectedProfessors);
+            responsibleUsers.add(currentUser);
+
+            exam.setResponsibleUsers(responsibleUsers);
+        } else {
+            // If no professors are selected, only add the current user
+            exam.setResponsibleUsers(Set.of(currentUser));
+        }
+
+        examService.saveExam(exam); // Save the new exam
+        return exam;
+    }
+
+    private void createNewMarks(User student, SubjectEntity subject, ExamEntity exam, Double marksObtained, boolean isAbsent) {
         // Check if the obtained marks are valid
         if (!isAbsent) {
             if (isValidMark(marksObtained, exam)) {
-                // Create a new MarksEntity
-                MarksEntity marksEntity = new MarksEntity();
-                marksEntity.setStudent(student);
-                marksEntity.setSubject(subject);
-                marksEntity.setExam(exam);
-                marksEntity.setMarksObtained(marksObtained);
+                // Check if a mark already exists for the selected student, subject, and exam
+                boolean markExists = marksService.existsByStudentAndSubjectAndExam(student, subject, exam);
 
-                // Save the marks
-                marksService.saveMarks(marksEntity);
+                if (markExists) {
+                    // If a mark already exists, update the existing mark
+                    updateMarks(student, subject, marksObtained, isAbsent, exam);
+                } else {
+                    // Create a new MarksEntity
+                    MarksEntity marksEntity = new MarksEntity();
+                    marksEntity.setStudent(student);
+                    marksEntity.setSubject(subject);
+                    marksEntity.setExam(exam);
+                    marksEntity.setMarksObtained(marksObtained);
 
-                NotificationUtils.showSuccessNotification("Marks saved successfully");
+                    // Save the marks
+                    marksService.saveMarks(marksEntity);
+
+                    NotificationUtils.showSuccessNotification("Marks saved successfully");
+                }
             } else {
                 NotificationUtils.showErrorNotification("Please enter valid marks within the specified range");
             }
         } else {
-            MarksEntity marksEntity = new MarksEntity();
-            marksEntity.setStudent(student);
-            marksEntity.setSubject(subject);
-            marksEntity.setExam(exam);
-            marksEntity.setAbsent(true);
-            marksService.saveMarks(marksEntity);
+            // Check if a mark already exists for the selected student, subject, and exam
+            boolean markExists = marksService.existsByStudentAndSubjectAndExam(student, subject, exam);
+
+            if (!markExists) {
+                // If no mark exists, create a new MarksEntity with absent status
+                MarksEntity marksEntity = new MarksEntity();
+                marksEntity.setStudent(student);
+                marksEntity.setSubject(subject);
+                marksEntity.setExam(exam);
+                marksEntity.setAbsent(true);
+                marksEntity.setMarksObtained(0.0);
+                marksService.saveMarks(marksEntity);
+
+                NotificationUtils.showSuccessNotification("Marks saved successfully");
+            } else {
+                NotificationUtils.showInfoNotification("Marks for the selected student, subject, and exam already exist.");
+            }
         }
     }
 
-    private void updateMarks(User student, SubjectEntity subject, ExamEntity exam, Double marksObtained, boolean isAbsent) {
-        MarksEntity existingMarks = marksService.getMarksByStudentAndSubjectAndExam(student, subject, exam);
-
+    private void updateMarks(User student, SubjectEntity subject, Double marksObtained, boolean isAbsent, ExamEntity exam) {
+        MarksEntity existingMarks = marksService.findMarkByStudentAndSubject(student, subject, exam).orElse(null);
         if (existingMarks != null) {
-            // If marksObtained is null, consider it as an absent case
             existingMarks.setAbsent(isAbsent);
-
             if (!isAbsent) {
-                // If marksObtained is not null, update the marks
-                existingMarks.setMarksObtained(marksObtained);
+                if (isValidMark(marksObtained, existingMarks.getExam())) {
+                    // If marksObtained is not null and within the valid range, update the marks
+                    existingMarks.setMarksObtained(marksObtained);
+                } else {
+                    // Display an error notification for invalid marks
+                    NotificationUtils.showErrorNotification("Invalid marks. Please enter valid marks within the specified range.");
+                    return; // Do not proceed with the update
+                }
             } else {
                 // If the user is marked as absent, set obtained marks to null
-                existingMarks.setMarksObtained(null);
+                existingMarks.setMarksObtained(0.00);
             }
-
             // Save the updated marks
             marksService.saveMarks(existingMarks);
 
             // Display a success notification
             NotificationUtils.showSuccessNotification("Marks updated successfully");
+        } else {
+            // If the mark does not exist, you may want to handle this case accordingly
+            NotificationUtils.showErrorNotification("Marks do not exist for the selected student and subject.");
         }
-    }
-
-    private void initExamComboBoxes() {
-        formLayout = new FormLayout();
-        examComboBox = new ComboBox<>("Select Exam");
-        examComboBox.setItemLabelGenerator(item ->
-                "DEPT: " + item.getDepartment().getShortName()
-                        + ", SUB: " + item.getSubject().getSubjectShortForm()
-                        + ", EXAM TYPE: " + item.getExamType()
-                        + ", EXAM DATE: " + item.getExamDate()
-        );
-
-        // Add a listener to handle student and exam selection
-        examComboBox.addValueChangeListener(event -> handleExamSelection());
-        formLayout.add(examComboBox);
-        primaryLayout.add(formLayout);
     }
 
     private void handleExamSelection() {
@@ -411,6 +431,22 @@ public class MarkEntryView extends Div {
         }
     }
 
+    private void initExamComboBoxes() {
+        formLayout = new FormLayout();
+        examComboBox = new ComboBox<>("Select Exam");
+        examComboBox.setItemLabelGenerator(item ->
+                "DEPT: " + item.getDepartment().getShortName()
+                        + ", SUB: " + item.getSubject().getSubjectShortForm()
+                        + ", EXAM TYPE: " + item.getExamType().getDisplayName()
+                        + ", EXAM DATE: " + item.getExamDate().format(UIUtils.dateTimeFormatter)
+        );
+
+        // Add a listener to handle student and exam selection
+        examComboBox.addValueChangeListener(event -> handleExamSelection());
+        formLayout.add(examComboBox);
+        primaryLayout.add(formLayout);
+    }
+
     private void saveMarksForStudent(User selectedStudent,
                                      NumberField marksObtainedTextField,
                                      Checkbox absentCheckbox) {
@@ -420,32 +456,21 @@ public class MarkEntryView extends Div {
         boolean isAbsent = absentCheckbox.getValue();
 
         if (selectedStudent != null && selectedSubject != null && selectedExam != null) {
-            if (!isAbsent) {
-                try {
-                    if (marksService.existsByStudentAndSubjectAndExam(selectedStudent,
-                            selectedSubject, selectedExam)) {
-                        // The mark already exists, switch to update mode
-                        updateMarks(selectedStudent, selectedSubject, selectedExam, marksObtained, isAbsent);
-                    } else {
-                        // Create a new MarksEntity
-                        createNewMarks(selectedStudent, selectedSubject, selectedExam, marksObtained, isAbsent);
-                    }
-                } catch (NumberFormatException e) {
-                    NotificationUtils.showErrorNotification("Please enter a valid number for Marks Obtained");
+            try {
+                if (marksService.existsByStudentAndSubjectAndExam(selectedStudent,
+                        selectedSubject, selectedExam)) {
+                    // The mark already exists, switch to update mode
+                    updateMarks(selectedStudent, selectedSubject, marksObtained, isAbsent, selectedExam);
+                } else {
+                    // Create a new MarksEntity
+                    createNewMarks(selectedStudent, selectedSubject, selectedExam, marksObtained, isAbsent);
                 }
-            } else {
-                createNewMarks(selectedStudent, selectedSubject, selectedExam, null, isAbsent);
+            } catch (NumberFormatException e) {
+                NotificationUtils.showErrorNotification("Please enter a valid number for Marks Obtained");
             }
         } else {
             NotificationUtils.showErrorNotification("Please select a student, subject, and exam before saving marks");
         }
-    }
-
-    private boolean isValidMark(Double obtainedMark, ExamEntity exam) {
-        Integer maxMark = exam.getMaxMarks();
-
-        // Check if obtainedMark is within the valid range
-        return obtainedMark != null && maxMark != null && obtainedMark <= maxMark.doubleValue();
     }
 
     private void updateExamOptions(DepartmentEntity department, Semester semester) {
@@ -467,6 +492,20 @@ public class MarkEntryView extends Div {
         }
     }
 
+    private boolean isValidMark(Double obtainedMark, ExamEntity exam) {
+        if (obtainedMark == null || exam == null) {
+            return false; // Invalid if obtainedMark or exam is null
+        }
+
+        Double maxMark = exam.getMaxMarks();
+        if (maxMark == null) {
+            return false; // Invalid if maxMark is null
+        }
+
+        // Check if obtainedMark is within the valid range
+        return obtainedMark >= 0 && obtainedMark <= maxMark;
+    }
+
     private void updateStudentFieldsForExam(ExamEntity exam) {
         // Clear the existing components in the secondary layout
         secondaryLayout.removeAll();
@@ -483,8 +522,8 @@ public class MarkEntryView extends Div {
         String subjectDetails = "Subject: " + exam.getSubject().getSubjectName()
                 + " - " + exam.getSubject().getSubjectShortForm()
                 + " - " + exam.getSubject().getSubjectCode()
-                + " - " + exam.getSubject().getMajorOfPaper()
-                + " - " + exam.getSubject().getTypeOfPaper();
+                + " - " + exam.getSubject().getMajorOfPaper().getDisplayName()
+                + " - " + exam.getSubject().getTypeOfPaper().getDisplayName();
         H4 subjectTittle = new H4(subjectDetails);
         secondaryLayout.add(examTittle, subjectTittle);
 
@@ -495,27 +534,27 @@ public class MarkEntryView extends Div {
             NumberField studentTextField = new NumberField(username + " [" + registerNumber + "]");
             studentTextField.setPlaceholder("Enter marks");
 
-            Checkbox absentCheckbox = new Checkbox("Absent");
-            absentCheckbox.addValueChangeListener(event -> {
-                studentTextField.clear();
-                studentTextField.setEnabled(!event.getValue()); // Disable Student field if the user is absent.
-            });
+            Checkbox absentCheckbox = getCheckbox(studentTextField);
 
             Button saveButton = new Button("Save", event -> saveMarksForStudent(student, studentTextField, absentCheckbox));
             saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
             // Fetch existing marks for the selected exam and student
-            MarksEntity existingMarksEntity = marksService.getMarksByStudentAndSubjectAndExam(
-                    student,
-                    subjectComboBox.getValue(),
-                    exam
-            );
+            MarksEntity existingMarksEntity = marksService.findMarkByStudentAndSubject(student, subjectComboBox.getValue(), exam)
+                    .orElse(null);
 
             if (existingMarksEntity != null) {
-
                 // Set the initial value of the NumberField to existing marks
                 studentTextField.setValue(existingMarksEntity.getMarksObtained());
                 saveButton.setText("Update");
+            }
+
+            absentCheckbox.setValue(existingMarksEntity != null && existingMarksEntity.isAbsent());
+
+            // Set text field to 0.0 and read-only if the student is absent
+            if (absentCheckbox.getValue()) {
+                studentTextField.setValue(0.0);
+                studentTextField.setReadOnly(true);
             }
 
             // Create a "Save" button for each student

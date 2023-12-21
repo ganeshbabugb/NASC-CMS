@@ -2,11 +2,15 @@ package com.nasc.application.data.model;
 
 import jakarta.persistence.*;
 
+import java.io.Serializable;
+
 @Entity
-public class MarksEntity {
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+public class MarksEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @EqualsAndHashCode.Include
     private Long markId;
 
     private Double marksObtained;

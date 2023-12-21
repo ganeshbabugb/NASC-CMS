@@ -1,5 +1,7 @@
 package com.nasc.application.utils;
 
+import java.time.format.DateTimeFormatter;
+
 public class UIUtils {
-    public static final String IMG_PATH = "images/";
+    public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 }

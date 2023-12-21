@@ -31,20 +31,20 @@ public class ExamEntity {
 
     private LocalDate examDate;
 
-    private int minMarks;
+    private Double minMarks;
 
-    private int maxMarks;
+    private Double maxMarks;
 
-    private double portionCovered;
+    private Double portionCovered;
 
-    private int examDuration;
+    private Integer examDuration;
 
     private LocalDate examCorrectionDate;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     private SubjectEntity subject;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "exam_responsible_users",
             joinColumns = @JoinColumn(name = "exam_id"),
@@ -100,35 +100,35 @@ public class ExamEntity {
         this.examDate = examDate;
     }
 
-    public int getMinMarks() {
+    public Double getMinMarks() {
         return minMarks;
     }
 
-    public void setMinMarks(int minMarks) {
+    public void setMinMarks(Double minMarks) {
         this.minMarks = minMarks;
     }
 
-    public int getMaxMarks() {
+    public Double getMaxMarks() {
         return maxMarks;
     }
 
-    public void setMaxMarks(int maxMarks) {
+    public void setMaxMarks(Double maxMarks) {
         this.maxMarks = maxMarks;
     }
 
-    public double getPortionCovered() {
+    public Double getPortionCovered() {
         return portionCovered;
     }
 
-    public void setPortionCovered(double portionCovered) {
+    public void setPortionCovered(Double portionCovered) {
         this.portionCovered = portionCovered;
     }
 
-    public int getExamDuration() {
+    public Integer getExamDuration() {
         return examDuration;
     }
 
-    public void setExamDuration(int examDuration) {
+    public void setExamDuration(Integer examDuration) {
         this.examDuration = examDuration;
     }
 

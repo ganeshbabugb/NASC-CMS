@@ -1,5 +1,6 @@
 package com.nasc.application.views.subject;
 
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.nasc.application.data.model.SubjectEntity;
 import com.nasc.application.data.model.enums.MajorOfPaper;
 import com.nasc.application.data.model.enums.PaperType;
@@ -8,13 +9,15 @@ import com.nasc.application.services.SubjectService;
 import com.nasc.application.services.dataprovider.GenericDataProvider;
 import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.crud.BinderCrudEditor;
 import com.vaadin.flow.component.crud.Crud;
 import com.vaadin.flow.component.crud.CrudEditor;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
@@ -23,15 +26,21 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.RolesAllowed;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import software.xdev.vaadin.grid_exporter.GridExporter;
+import software.xdev.vaadin.grid_exporter.column.ColumnConfigurationBuilder;
+
+import java.util.List;
 
 @Component
 @UIScope
 @Route(value = "create-subject", layout = MainLayout.class)
 @RolesAllowed("HOD")
-public class CreateSubjectCrud extends Div {
-
+public class CreateSubjectCrud extends VerticalLayout {
+    // TODO : FIX THE CORRECT DISPLAY NAME IN CRUD
+    public static final String EDIT_COLUMN = "vaadin-crud-edit-column";
     private final SubjectService service;
     private final Crud<SubjectEntity> crud;
+    private final ColumnConfigurationBuilder columnConfigurationBuilder = new ColumnConfigurationBuilder();
 
     @Autowired
     public CreateSubjectCrud(SubjectService service) {
@@ -39,7 +48,27 @@ public class CreateSubjectCrud extends Div {
         crud = new Crud<>(SubjectEntity.class, createEditor());
         createGrid();
         setupDataProvider();
-        add(new VerticalLayout(crud));
+        HorizontalLayout horizontalLayout = new HorizontalLayout();
+        horizontalLayout.add(
+                new Button(
+                        "Export",
+                        FontAwesome.Solid.FILE_EXPORT.create(),
+                        e -> {
+                            List<Grid.Column<SubjectEntity>> columns = crud.getGrid().getColumns();
+                            columns.forEach(columnConfigurationBuilder::build);
+                            String fileName = "Department Subjects";
+                            GridExporter.newWithDefaults(crud.getGrid())
+                                    //Removing Edit Column For Export
+                                    .withColumnFilter(stateEntityColumn -> !stateEntityColumn.getKey().equals(EDIT_COLUMN))
+                                    .withFileName(fileName)
+                                    .withColumnConfigurationBuilder(columnConfigurationBuilder)
+                                    .open();
+                        }
+                ));
+        horizontalLayout.setWidthFull();
+        horizontalLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+        horizontalLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+        add(horizontalLayout, crud);
     }
 
     private CrudEditor<SubjectEntity> createEditor() {
@@ -86,7 +115,6 @@ public class CreateSubjectCrud extends Div {
 
         grid.removeColumnByKey("id");
         grid.removeColumnByKey("department");
-        String EDIT_COLUMN = "vaadin-crud-edit-column";
         grid.getColumnByKey(EDIT_COLUMN).setHeader("Edit");
         grid.getColumnByKey(EDIT_COLUMN).setWidth("100px");
         grid.getColumnByKey(EDIT_COLUMN).setResizable(false);

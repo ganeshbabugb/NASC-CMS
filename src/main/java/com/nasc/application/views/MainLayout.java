@@ -12,7 +12,6 @@ import com.nasc.application.views.forms.adderss.AddressFormView;
 import com.nasc.application.views.forms.bank.BankDetailsFormView;
 import com.nasc.application.views.forms.personal.PersonalFormView;
 import com.nasc.application.views.marks.entry.MarkEntryView;
-import com.nasc.application.views.marks.table.MarksTableView;
 import com.nasc.application.views.newpac.MarksView;
 import com.nasc.application.views.password.PasswordChangeView;
 import com.nasc.application.views.professor.status.ProfessorStatusView;
@@ -125,11 +124,6 @@ public class MainLayout extends AppLayout {
         if (accessChecker.hasAccess(MarkEntryView.class)) {
             nav.addItem(new SideNavItem("Subject Mark", MarkEntryView.class,
                     FontAwesome.Solid.PENCIL.create()));
-
-        }
-        if (accessChecker.hasAccess(MarksTableView.class)) {
-            nav.addItem(new SideNavItem("View Mark", MarksTableView.class,
-                    FontAwesome.Solid.BOOK_OPEN_READER.create()));
 
         }
         if (accessChecker.hasAccess(CreateUsers.class)) {

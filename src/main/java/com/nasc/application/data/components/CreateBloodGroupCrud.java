@@ -21,8 +21,6 @@ import org.springframework.stereotype.Component;
 import software.xdev.vaadin.grid_exporter.GridExporter;
 import software.xdev.vaadin.grid_exporter.column.ColumnConfigurationBuilder;
 
-import java.util.List;
-
 
 @Component
 @UIScope
@@ -31,7 +29,6 @@ public class CreateBloodGroupCrud extends VerticalLayout {
     private final String EDIT_COLUMN = "vaadin-crud-edit-column";
     private final BloodGroupService service;
     private final Crud<BloodGroupEntity> crud;
-    private final ColumnConfigurationBuilder columnConfigurationBuilder = new ColumnConfigurationBuilder();
 
     @Autowired
     public CreateBloodGroupCrud(BloodGroupService service) {
@@ -44,14 +41,12 @@ public class CreateBloodGroupCrud extends VerticalLayout {
                 "Export",
                 FontAwesome.Solid.FILE_EXPORT.create(),
                 e -> {
-                    List<Grid.Column<BloodGroupEntity>> columns = crud.getGrid().getColumns();
-                    columns.forEach(columnConfigurationBuilder::build);
-                    String fileName = "AcademicYear";
+                    String fileName = "Blood Group";
                     GridExporter.newWithDefaults(crud.getGrid())
                             //Removing Edit Column For Export
                             .withColumnFilter(stateEntityColumn -> !stateEntityColumn.getKey().equals(EDIT_COLUMN))
                             .withFileName(fileName)
-                            .withColumnConfigurationBuilder(columnConfigurationBuilder)
+                            .withColumnConfigurationBuilder(new ColumnConfigurationBuilder())
                             .open();
                 }
         );

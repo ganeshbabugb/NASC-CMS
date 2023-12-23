@@ -4,4 +4,18 @@
 
 .fail-color {
     background-color: #E76161;
+    font-weight: bold;
+}
+
+.absent-color {
+    background-color: #FBF0B2;
+    font-weight: bold;
+}
+
+.present-color {
+    background-color: #CAEDFF;
+}
+
+.na-color {
+    background-color: #B6BBC4;
 }

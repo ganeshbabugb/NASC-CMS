@@ -29,8 +29,6 @@ import org.springframework.stereotype.Component;
 import software.xdev.vaadin.grid_exporter.GridExporter;
 import software.xdev.vaadin.grid_exporter.column.ColumnConfigurationBuilder;
 
-import java.util.List;
-
 @Component
 @UIScope
 @Route(value = "create-subject", layout = MainLayout.class)
@@ -40,7 +38,6 @@ public class CreateSubjectCrud extends VerticalLayout {
     public static final String EDIT_COLUMN = "vaadin-crud-edit-column";
     private final SubjectService service;
     private final Crud<SubjectEntity> crud;
-    private final ColumnConfigurationBuilder columnConfigurationBuilder = new ColumnConfigurationBuilder();
 
     @Autowired
     public CreateSubjectCrud(SubjectService service) {
@@ -54,14 +51,12 @@ public class CreateSubjectCrud extends VerticalLayout {
                         "Export",
                         FontAwesome.Solid.FILE_EXPORT.create(),
                         e -> {
-                            List<Grid.Column<SubjectEntity>> columns = crud.getGrid().getColumns();
-                            columns.forEach(columnConfigurationBuilder::build);
                             String fileName = "Department Subjects";
                             GridExporter.newWithDefaults(crud.getGrid())
                                     //Removing Edit Column For Export
                                     .withColumnFilter(stateEntityColumn -> !stateEntityColumn.getKey().equals(EDIT_COLUMN))
                                     .withFileName(fileName)
-                                    .withColumnConfigurationBuilder(columnConfigurationBuilder)
+                                    .withColumnConfigurationBuilder(new ColumnConfigurationBuilder())
                                     .open();
                         }
                 ));

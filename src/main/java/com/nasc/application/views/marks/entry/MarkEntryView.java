@@ -24,7 +24,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.NumberField;
-import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -34,7 +33,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Route(value = "subject-view", layout = MainLayout.class)
 @PageTitle("Subject View")
@@ -79,6 +77,7 @@ public class MarkEntryView extends Div {
     private FormLayout markFormLayout;
     private FormLayout examFormLayout;
     private FormLayout formLayout;
+
     //Exam ComboBoxes
     private ComboBox<ExamEntity> examComboBox;
 
@@ -114,11 +113,8 @@ public class MarkEntryView extends Div {
 
         initExamForm();
 
-
         departmentComboBox.addValueChangeListener(event -> updateSubjectOptions());
-
         semesterComboBox.addValueChangeListener(event -> updateSubjectOptions());
-
         examComboBox.addValueChangeListener(event -> {
             // Fetch the selected exam
             ExamEntity selectedExam = event.getValue();
@@ -128,7 +124,6 @@ public class MarkEntryView extends Div {
         });
 
         semesterComboBox.addValueChangeListener(event -> updateSubjectOptions());
-
         subjectComboBox.addValueChangeListener(event -> {
 
             // No need to call updateSubjectOptions again, as it is automatically called when department or semester changes
@@ -245,17 +240,8 @@ public class MarkEntryView extends Div {
         professorMultiSelectComboBox = new MultiSelectComboBox<>("Subject Staffs");
         professorMultiSelectComboBox.setItems(professors);
         professorMultiSelectComboBox.setPlaceholder("Select persons");
+        professorMultiSelectComboBox.setAutoExpand(MultiSelectComboBox.AutoExpandMode.BOTH);
         professorMultiSelectComboBox.setItemLabelGenerator(item -> item.getUsername() + " [" + item.getRegisterNumber() + "]");
-
-        TextArea selectedStaffTextArea = new TextArea("Selected Staff");
-        selectedStaffTextArea.setReadOnly(true);
-
-        professorMultiSelectComboBox.addValueChangeListener(e -> {
-            String selectedCountriesText = e.getValue().stream()
-                    .map(User::getUsername).collect(Collectors.joining(", "));
-
-            selectedStaffTextArea.setValue(selectedCountriesText);
-        });
 
         examFormLayout.add(
                 examDateDatePicker,
@@ -266,7 +252,6 @@ public class MarkEntryView extends Div {
                 examDurationIntegerField,
                 examCorrectionDatePicker,
                 professorMultiSelectComboBox,
-                selectedStaffTextArea,
                 createExamButton
         );
 

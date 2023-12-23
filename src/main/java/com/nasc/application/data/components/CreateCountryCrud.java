@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component;
 import software.xdev.vaadin.grid_exporter.GridExporter;
 import software.xdev.vaadin.grid_exporter.column.ColumnConfigurationBuilder;
 
-import java.util.List;
 
 @Component
 @UIScope
@@ -30,7 +29,6 @@ public class CreateCountryCrud extends VerticalLayout {
     private final String EDIT_COLUMN = "vaadin-crud-edit-column";
     private final CountryService service;
     private final Crud<CountryEntity> crud;
-    private final ColumnConfigurationBuilder columnConfigurationBuilder = new ColumnConfigurationBuilder();
 
     @Autowired
     public CreateCountryCrud(CountryService service) {
@@ -44,14 +42,12 @@ public class CreateCountryCrud extends VerticalLayout {
                         "Export",
                         FontAwesome.Solid.FILE_EXPORT.create(),
                         e -> {
-                            List<Grid.Column<CountryEntity>> columns = crud.getGrid().getColumns();
-                            columns.forEach(columnConfigurationBuilder::build);
                             String fileName = "Countries";
                             GridExporter.newWithDefaults(crud.getGrid())
                                     //Removing Edit Column For Export
                                     .withColumnFilter(stateEntityColumn -> !stateEntityColumn.getKey().equals(EDIT_COLUMN))
                                     .withFileName(fileName)
-                                    .withColumnConfigurationBuilder(columnConfigurationBuilder)
+                                    .withColumnConfigurationBuilder(new ColumnConfigurationBuilder())
                                     .open();
                         }
                 )));

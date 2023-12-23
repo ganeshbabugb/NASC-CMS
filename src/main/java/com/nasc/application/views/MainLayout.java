@@ -80,51 +80,45 @@ public class MainLayout extends AppLayout {
 
         if (accessChecker.hasAccess(DashboardView.class)) {
             nav.addItem(new SideNavItem("Dashboard", DashboardView.class, LineAwesomeIcon.CHART_AREA_SOLID.create()));
-
         }
         if (accessChecker.hasAccess(PersonalFormView.class)) {
             nav.addItem(new SideNavItem("Person Form", PersonalFormView.class, LineAwesomeIcon.USER.create()));
-
         }
         if (accessChecker.hasAccess(AddressFormView.class)) {
             nav.addItem(
                     new SideNavItem("Address Form", AddressFormView.class, LineAwesomeIcon.MAP_MARKER_SOLID.create()));
-
         }
         if (accessChecker.hasAccess(BankDetailsFormView.class)) {
             nav.addItem(new SideNavItem("Bank Details Form", BankDetailsFormView.class,
                     LineAwesomeIcon.CREDIT_CARD.create()));
-
         }
         if (accessChecker.hasAccess(StudentsStatusView.class)) {
             nav.addItem(
                     new SideNavItem("Students Status", StudentsStatusView.class, LineAwesomeIcon.TH_SOLID.create()));
-
         }
         if (accessChecker.hasAccess(ProfessorStatusView.class)) {
             nav.addItem(
                     new SideNavItem("Professor Status", ProfessorStatusView.class, LineAwesomeIcon.TH_SOLID.create()));
-
         }
         if (accessChecker.hasAccess(StudentMasterDetailsView.class)) {
             nav.addItem(new SideNavItem("Student Master Details", StudentMasterDetailsView.class,
                     LineAwesomeIcon.USERS_SOLID.create()));
-
         }
         if (accessChecker.hasAccess(AddressMasterDetailView.class)) {
             nav.addItem(new SideNavItem("Address Master Detail", AddressMasterDetailView.class,
                     LineAwesomeIcon.ADDRESS_CARD.create()));
-
         }
         if (accessChecker.hasAccess(CreateSubjectCrud.class)) {
             nav.addItem(new SideNavItem("Create Subject Crud", CreateSubjectCrud.class,
                     FontAwesome.Solid.BOOK_OPEN.create()));
-
         }
         if (accessChecker.hasAccess(MarkEntryView.class)) {
-            nav.addItem(new SideNavItem("Subject Mark", MarkEntryView.class,
+            nav.addItem(new SideNavItem("Mark-Book Entry", MarkEntryView.class,
                     FontAwesome.Solid.PENCIL.create()));
-
+        }
+        if (accessChecker.hasAccess(MarksView.class)) {
+            nav.addItem(
+                    new SideNavItem("Mark-Book Overview", MarksView.class, FontAwesome.Solid.DATABASE.create()));
         }
         if (accessChecker.hasAccess(CreateUsers.class)) {
             nav.addItem(new SideNavItem("Create Users", CreateUsers.class,
@@ -137,22 +131,14 @@ public class MainLayout extends AppLayout {
         if (accessChecker.hasAccess(ValueVaultView.class)) {
             nav.addItem(
                     new SideNavItem("Value Vault", ValueVaultView.class, FontAwesome.Solid.DATABASE.create()));
-
         }
         if (accessChecker.hasAccess(ActiveUsersView.class)) {
             nav.addItem(
                     new SideNavItem("Active Users", ActiveUsersView.class, FontAwesome.Solid.DATABASE.create()));
-
-        }
-        if (accessChecker.hasAccess(MarksView.class)) {
-            nav.addItem(
-                    new SideNavItem("new Mark view", MarksView.class, FontAwesome.Solid.DATABASE.create()));
-
         }
         if (accessChecker.hasAccess(AboutView.class)) {
             nav.addItem(new SideNavItem("About", AboutView.class, LineAwesomeIcon.FILE.create()));
         }
-
         return nav;
     }
 
@@ -165,13 +151,11 @@ public class MainLayout extends AppLayout {
 
             Avatar avatar = new Avatar(user.getUsername());
 
-//            https://vaadin.com/blog/saving-and-displaying-images-using-jpa
-            /*
+            // https://vaadin.com/blog/saving-and-displaying-images-using-jpa
             // Profile icon
-            StreamResource resource = new StreamResource("profile-pic",
-                    () -> new ByteArrayInputStream(user.getProfilePicture()));
-            avatar.setImageResource(resource);
-*/
+            // StreamResource resource = new StreamResource("profile-pic",
+            //        () -> new ByteArrayInputStream(user.getProfilePicture()));
+            // avatar.setImageResource(resource);
 
             avatar.setThemeName("xsmall");
             avatar.getElement().setAttribute("tabindex", "-1");
@@ -188,9 +172,7 @@ public class MainLayout extends AppLayout {
             div.getElement().getStyle().set("align-items", "center");
             div.getElement().getStyle().set("gap", "var(--lumo-space-s)");
             userName.add(div);
-            userName.getSubMenu().addItem("log out", e -> {
-                authenticatedUser.logout();
-            });
+            userName.getSubMenu().addItem("log out", e -> authenticatedUser.logout());
 
             layout.add(userMenu);
         } else {

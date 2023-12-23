@@ -146,6 +146,16 @@
             <artifactId>badge-list-addon</artifactId>
             <version>1.0.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin-charts-flow</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin-charts-flow-svg-generator</artifactId>
+        </dependency>
+
     </dependencies>
 
 

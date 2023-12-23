@@ -30,8 +30,6 @@ public class CreateAcademicYearCrud extends VerticalLayout {
     private final String EDIT_COLUMN = "vaadin-crud-edit-column";
     private final AcademicYearService service;
     private final Crud<AcademicYearEntity> crud;
-    private final ColumnConfigurationBuilder columnConfigurationBuilder = new ColumnConfigurationBuilder();
-
     @Autowired
     public CreateAcademicYearCrud(AcademicYearService service) {
         this.service = service;
@@ -44,14 +42,12 @@ public class CreateAcademicYearCrud extends VerticalLayout {
                         "Export",
                         FontAwesome.Solid.FILE_EXPORT.create(),
                         e -> {
-                            List<Grid.Column<AcademicYearEntity>> columns = crud.getGrid().getColumns();
-                            columns.forEach(columnConfigurationBuilder::build);
                             String fileName = "AcademicYear";
                             GridExporter.newWithDefaults(crud.getGrid())
                                     //Removing Edit Column For Export
                                     .withColumnFilter(stateEntityColumn -> !stateEntityColumn.getKey().equals(EDIT_COLUMN))
                                     .withFileName(fileName)
-                                    .withColumnConfigurationBuilder(columnConfigurationBuilder)
+                                    .withColumnConfigurationBuilder(new ColumnConfigurationBuilder())
                                     .open();
                         }
                 ));

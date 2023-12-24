@@ -111,7 +111,7 @@ public class MarksView extends VerticalLayout {
         marksGrid.setSizeFull();
         marksGrid.setEditOnClick(true);
         marksGrid.setSingleCellEdit(true);
-
+        marksGrid.setMultiSort(true);
         marksGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_COLUMN_BORDERS);
         marksGrid.addThemeVariants(GridProVariant.LUMO_ROW_STRIPES);
 
@@ -121,7 +121,7 @@ public class MarksView extends VerticalLayout {
         // Button
         Button searchButton = new Button("Search/Refresh");
         searchButton.addClickListener(e -> updateGridData());
-        searchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        searchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
         menuButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         HorizontalLayout FilterLayout = new HorizontalLayout();
@@ -168,6 +168,18 @@ public class MarksView extends VerticalLayout {
         setSizeFull();
     }
 
+    private static Component createFilterHeader(Consumer<String> filterChangeConsumer) {
+        TextField textField = new TextField();
+        textField.setValueChangeMode(ValueChangeMode.EAGER);
+        textField.setClearButtonVisible(true);
+        textField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        textField.setWidthFull();
+        textField.getStyle().set("max-width", "100%");
+        // CASE IN SENSITIVE
+        textField.addValueChangeListener(e -> filterChangeConsumer.accept(e.getValue().toLowerCase()));
+        return textField;
+    }
+
     private void configureComboBoxes() {
         List<AcademicYearEntity> academicYears = academicYearService.findAll();
         List<DepartmentEntity> departments = departmentService.findAll();
@@ -176,33 +188,19 @@ public class MarksView extends VerticalLayout {
 
         semesterComboBox.setItems(semesters);
         semesterComboBox.setItemLabelGenerator(Semester::getDisplayName);
+        semesterComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
 
         examTypeComboBox.setItems(examTypes);
         examTypeComboBox.setItemLabelGenerator(ExamType::getDisplayName);
+        examTypeComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
 
         academicYearComboBox.setItems(academicYears);
         academicYearComboBox.setItemLabelGenerator(item -> item.getStartYear() + " - " + item.getEndYear());
+        academicYearComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
 
         departmentComboBox.setItems(departments);
         departmentComboBox.setItemLabelGenerator(item -> item.getName() + " - " + item.getShortName());
-    }
-
-    private static Component createFilterHeader(Consumer<String> filterChangeConsumer) {
-        TextField textField = new TextField();
-        textField.setValueChangeMode(ValueChangeMode.EAGER);
-        textField.setClearButtonVisible(true);
-        textField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        textField.setWidthFull();
-        textField.getStyle().set("max-width", "100%");
-
-        // CASE IN SENSITIVE
-        textField.addValueChangeListener(e -> filterChangeConsumer.accept(e.getValue().toLowerCase()));
-
-        // Fix
-        HorizontalLayout layout = new HorizontalLayout(textField);
-        layout.getThemeList().clear();
-        layout.getThemeList().add("spacing-xs");
-        return layout;
+        departmentComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
     }
 
     private void updateTotalPassFailCounts(List<StudentMarksDTO> allStudentMarks, PassFailCounts counts) {
@@ -292,13 +290,14 @@ public class MarksView extends VerticalLayout {
 
         marksGrid.removeAllColumns();
 
-        String studentFooterString = "TOTAL STUDENT :" + allStudents.size();
+        String studentFooterString = "TOTAL STUDENT: " + allStudents.size();
         String studentFooterOuterHtml = String.format("<b>%s</b>", studentFooterString);
         Grid.Column<StudentMarksDTO> studentName = marksGrid.addColumn(studentMarksDTO -> studentMarksDTO.getStudent().getUsername())
                 .setHeader("Student Name")
                 .setSortable(true)
                 .setKey("Student Name")
                 .setAutoWidth(true)
+                .setFrozen(true)
                 .setFooter(new Html(studentFooterOuterHtml));
 
         headerRow.getCell(studentName).setComponent(createFilterHeader(name ->
@@ -308,13 +307,14 @@ public class MarksView extends VerticalLayout {
                 .setHeader("Register Number")
                 .setAutoWidth(true)
                 .setSortable(true)
+                .setFrozen(true)
                 .setKey("Register Number");
 
         headerRow.getCell(registerNumber).setComponent(createFilterHeader(regNumber ->
                 dataProvider.setFilter(studentMarksDTO -> studentMarksDTO.getStudent().getRegisterNumber().toLowerCase().contains(regNumber)))); // CASE INSENSITIVE
 
-        contextMenu.addColumnToggleItem("STUDENT NAME", studentName);
-        contextMenu.addColumnToggleItem("REGISTER NUMBER", registerNumber);
+        contextMenu.addColumnToggleItem(studentName);
+        contextMenu.addColumnToggleItem(registerNumber);
 
         setupColumns(subjects);
 
@@ -406,11 +406,11 @@ public class MarksView extends VerticalLayout {
                 .setSortable(true)
                 .setTextAlign(ColumnTextAlign.CENTER)
                 .setAutoWidth(true)
-                .setKey("Total Present/Absent");
+                .setKey("PRE/ABS");
 
 
-        contextMenu.addColumnToggleItem("TOTAL PASS/FAIL", totalPassFailColumn);
-        contextMenu.addColumnToggleItem("TOTAL PRESENT/ABSENT", totalPresentAbsentColumn);
+        contextMenu.addColumnToggleItem(totalPassFailColumn);
+        contextMenu.addColumnToggleItem(totalPresentAbsentColumn);
 
         // Chart Column
         Grid.Column<StudentMarksDTO> chartButtonColumn = marksGrid.addComponentColumn(studentMarksDTO -> {
@@ -422,11 +422,12 @@ public class MarksView extends VerticalLayout {
                 })
                 .setHeader("Chart")
                 .setFlexGrow(0) // TO AVOID IT TAKES EXTRA SPACE
-                .setAutoWidth(true)
-                .setKey("Chart")
-                .setSortable(false);
+                .setFrozenToEnd(true)
+                .setSortable(false)
+                .setTextAlign(ColumnTextAlign.CENTER)
+                .setKey("Chart");
 
-        contextMenu.addColumnToggleItem("Chart", chartButtonColumn);
+        contextMenu.addColumnToggleItem(chartButtonColumn);
 
         dataProvider = marksGrid.setItems(allStudentMarks);
     }
@@ -466,6 +467,7 @@ public class MarksView extends VerticalLayout {
             markField.setValue(0.0); // Default value for the fields
             markField.setWidthFull();
 
+            String subjectCapitalize = SharedUtil.capitalize(subject.getSubjectName().toLowerCase());
             Grid.Column<StudentMarksDTO> marksColumn = marksGrid.addEditColumn(studentMarksDTO ->
                     {
                         StudentSubjectInfo subjectInfo = studentMarksDTO.getSubjectInfoMap()
@@ -476,7 +478,7 @@ public class MarksView extends VerticalLayout {
                                 .map(Map.Entry::getValue)
                                 .orElse(new StudentSubjectInfo());
 
-                        return subjectInfo.getMarks() != null ? subjectInfo.getMarks() : 0.0; // FIX THIS LATER // FOR N/A
+                        return subjectInfo.getMarks() != null ? subjectInfo.getMarks() : 0.0;
 
                     })
                     .custom(markField, (studentMarksDTO, newValue) -> {
@@ -494,7 +496,7 @@ public class MarksView extends VerticalLayout {
                             }
                         }
                     })
-                    .setHeader(subject.getSubjectName())
+                    .setHeader(subjectCapitalize)
                     .setFlexGrow(0)
                     .setAutoWidth(true)
                     .setSortable(true)
@@ -526,7 +528,7 @@ public class MarksView extends VerticalLayout {
                         }
                     })
                     .setTextAlign(ColumnTextAlign.CENTER)
-                    .setKey(SharedUtil.capitalize(subject.getSubjectName().toLowerCase()));
+                    .setKey(subjectCapitalize);
 
             ComboBox<String> passFailFilter = createPassFailFilter(passOrFail -> {
                 // Remove any existing filters before applying new ones
@@ -549,6 +551,7 @@ public class MarksView extends VerticalLayout {
 
             headerRow.getCell(marksColumn).setComponent(passFailFilter);
 
+            String subjectShortForm = SharedUtil.capitalize(subject.getSubjectShortForm().toLowerCase());
             Grid.Column<StudentMarksDTO> attendanceStatus = marksGrid.addColumn(new TextRenderer<>(
                             studentMarksDTO -> {
                                 StudentSubjectInfo subjectInfo = studentMarksDTO.getSubjectInfoMap()
@@ -582,7 +585,7 @@ public class MarksView extends VerticalLayout {
                             return isAbsent ? "absent-color" : "present-color"; // Attendance
                         return "na-color";
                     })
-                    .setHeader(subject.getSubjectShortForm())
+                    .setHeader(subjectShortForm)
                     .setSortable(true)
                     .setFlexGrow(0)
                     .setAutoWidth(true)
@@ -592,7 +595,7 @@ public class MarksView extends VerticalLayout {
                         boolean isAbsent2 = isAbsentForCurrentCell(studentMarksDTO2, subject);
                         return Boolean.compare(isAbsent1, isAbsent2); // Compare based on the "Absent" status
                     })
-                    .setKey(SharedUtil.capitalize(subject.getSubjectName().toLowerCase()) + " Attendance");
+                    .setKey(subjectCapitalize + " Attendance");
 
             marksGrid.addCellEditStartedListener(event -> {
                 StudentMarksDTO studentMarksDTO = event.getItem();
@@ -625,8 +628,9 @@ public class MarksView extends VerticalLayout {
                 }
             });
             headerRow.getCell(attendanceStatus).setComponent(presentAbsentFilter);
-            contextMenu.addColumnToggleItem(subject.getSubjectShortForm(), marksColumn);
-            contextMenu.addColumnToggleItem(subject.getSubjectShortForm() + " ATTENDANCE", attendanceStatus);
+
+            contextMenu.addColumnToggleItem(marksColumn);
+            contextMenu.addColumnToggleItem(attendanceStatus);
         }
     }
 
@@ -690,8 +694,8 @@ public class MarksView extends VerticalLayout {
             setOpenOnClick(true);
         }
 
-        void addColumnToggleItem(String label, Grid.Column<StudentMarksDTO> column) {
-            MenuItem menuItem = this.addItem(label, e -> column.setVisible(e.getSource().isChecked()));
+        void addColumnToggleItem(Grid.Column<StudentMarksDTO> column) {
+            MenuItem menuItem = this.addItem(column.getKey(), e -> column.setVisible(e.getSource().isChecked()));
             menuItem.setCheckable(true);
             menuItem.setChecked(column.isVisible());
             menuItem.setKeepOpen(true);

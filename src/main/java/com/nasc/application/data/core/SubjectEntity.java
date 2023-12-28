@@ -1,9 +1,9 @@
-package com.nasc.application.data.model;
+package com.nasc.application.data.core;
 
-import com.nasc.application.data.model.base.BaseEntity;
-import com.nasc.application.data.model.enums.MajorOfPaper;
-import com.nasc.application.data.model.enums.PaperType;
-import com.nasc.application.data.model.enums.Semester;
+import com.nasc.application.data.core.base.BaseEntity;
+import com.nasc.application.data.core.enums.MajorOfPaper;
+import com.nasc.application.data.core.enums.PaperType;
+import com.nasc.application.data.core.enums.Semester;
 import jakarta.persistence.*;
 
 import java.util.Objects;

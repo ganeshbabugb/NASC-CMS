@@ -1,9 +1,9 @@
 package com.nasc.application.services;
 
-import com.nasc.application.data.model.DepartmentEntity;
-import com.nasc.application.data.model.SubjectEntity;
-import com.nasc.application.data.model.User;
-import com.nasc.application.data.model.enums.Semester;
+import com.nasc.application.data.core.DepartmentEntity;
+import com.nasc.application.data.core.SubjectEntity;
+import com.nasc.application.data.core.User;
+import com.nasc.application.data.core.enums.Semester;
 import com.nasc.application.data.repository.SubjectRepository;
 import com.nasc.application.security.AuthenticatedUser;
 import com.nasc.application.services.base.BaseServiceClass;

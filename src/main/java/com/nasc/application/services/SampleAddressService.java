@@ -1,6 +1,6 @@
 package com.nasc.application.services;
 
-import com.nasc.application.data.model.AddressDetails;
+import com.nasc.application.data.core.AddressDetails;
 import com.nasc.application.data.repository.SampleAddressRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,9 +37,4 @@ public class SampleAddressService {
     public Page<AddressDetails> list(Pageable pageable, Specification<AddressDetails> filter) {
         return repository.findAll(filter, pageable);
     }
-
-    public int count() {
-        return (int) repository.count();
-    }
-
 }

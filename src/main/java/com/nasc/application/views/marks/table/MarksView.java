@@ -1,17 +1,19 @@
-package com.nasc.application.views.newpac;
+package com.nasc.application.views.marks.table;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
-import com.nasc.application.data.model.AcademicYearEntity;
-import com.nasc.application.data.model.DepartmentEntity;
-import com.nasc.application.data.model.SubjectEntity;
-import com.nasc.application.data.model.User;
-import com.nasc.application.data.model.dto.StudentMarksDTO;
-import com.nasc.application.data.model.dto.StudentSubjectInfo;
-import com.nasc.application.data.model.enums.ExamType;
-import com.nasc.application.data.model.enums.Role;
-import com.nasc.application.data.model.enums.Semester;
+import com.nasc.application.data.core.AcademicYearEntity;
+import com.nasc.application.data.core.DepartmentEntity;
+import com.nasc.application.data.core.SubjectEntity;
+import com.nasc.application.data.core.User;
+import com.nasc.application.data.core.dto.StudentMarksDTO;
+import com.nasc.application.data.core.dto.StudentSubjectInfo;
+import com.nasc.application.data.core.enums.ExamType;
+import com.nasc.application.data.core.enums.Role;
+import com.nasc.application.data.core.enums.Semester;
+import com.nasc.application.data.core.enums.StudentSection;
 import com.nasc.application.services.*;
 import com.nasc.application.utils.NotificationUtils;
+import com.nasc.application.utils.UIUtils;
 import com.nasc.application.views.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Html;
@@ -26,7 +28,6 @@ import com.vaadin.flow.component.combobox.ComboBoxVariant;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
@@ -46,7 +47,6 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
-import com.vaadin.flow.shared.util.SharedUtil;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
 import org.vaadin.olli.FileDownloadWrapper;
@@ -69,7 +69,6 @@ import java.util.function.Consumer;
         value = "./recipe/gridcell/grid-cell.css"
 )
 @Slf4j
-@Uses(Chart.class)
 public class MarksView extends VerticalLayout {
 
     // Service
@@ -87,6 +86,7 @@ public class MarksView extends VerticalLayout {
     private final ComboBox<Semester> semesterComboBox = new ComboBox<>("Select Semester");
     private final ComboBox<DepartmentEntity> departmentComboBox = new ComboBox<>("Select Department");
     private final ComboBox<AcademicYearEntity> academicYearComboBox = new ComboBox<>("Select Academic Year");
+    private final ComboBox<StudentSection> studentSectionComboBox = new ComboBox<>("Select Student Section");
 
     // UTILS
     private final ColumnToggleContextMenu contextMenu = new ColumnToggleContextMenu(menuButton);
@@ -115,7 +115,6 @@ public class MarksView extends VerticalLayout {
         marksGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_COLUMN_BORDERS);
         marksGrid.addThemeVariants(GridProVariant.LUMO_ROW_STRIPES);
 
-        // marksGrid.setEnterNextRow(true);
         headerRow = marksGrid.appendHeaderRow();
 
         // Button
@@ -127,36 +126,49 @@ public class MarksView extends VerticalLayout {
         HorizontalLayout FilterLayout = new HorizontalLayout();
 
         FilterLayout.setAlignItems(Alignment.BASELINE);
-        FilterLayout.add(departmentComboBox, academicYearComboBox, semesterComboBox, examTypeComboBox, searchButton);
+        FilterLayout.add(departmentComboBox, academicYearComboBox, semesterComboBox, examTypeComboBox, studentSectionComboBox, searchButton);
 
         HorizontalLayout horizontalLayout = new HorizontalLayout(menuButton,
                 new Button("Export",
                         FontAwesome.Solid.FILE_EXPORT.create(),
                         e -> {
-                            String fileName = departmentComboBox.getValue().getShortName()
-                                    + "_"
-                                    + academicYearComboBox.getValue().getStartYear() + "-" + academicYearComboBox.getValue().getEndYear()
-                                    + "_"
-                                    + semesterComboBox.getValue().getDisplayName()
-                                    + "_"
-                                    + examTypeComboBox.getValue().getDisplayName() + "_Marks";
+                            ExamType selectedExamType = examTypeComboBox.getValue();
+                            Semester selectedSemester = semesterComboBox.getValue();
+                            DepartmentEntity selectedDepartment = departmentComboBox.getValue();
+                            AcademicYearEntity selectedAcademicYear = academicYearComboBox.getValue();
+                            StudentSection studentSection = studentSectionComboBox.getValue();
 
-                            XlsxFormat xlsxFormat = new XlsxFormat();
-                            PdfFormat pdfFormat = new PdfFormat();
-                            HtmlFormat htmlFormat = new HtmlFormat();
+                            // Check Grid and Filter Before Export
+                            if (!isFilterInValid() && dataProvider != null) {
+                                String fileName = selectedDepartment.getShortName()
+                                        + "_"
+                                        + selectedAcademicYear.getStartYear() + "-" + selectedAcademicYear.getEndYear()
+                                        + "_"
+                                        + studentSection.getDisplayName()
+                                        + "_"
+                                        + selectedSemester.getDisplayName()
+                                        + "_"
+                                        + selectedExamType.getDisplayName() + "_Marks";
 
-                            gridExporter = GridExporter
-                                    .newWithDefaults(marksGrid)
-                                    .withFileName(fileName)
-                                    // Ignoring chart column
-                                    .withColumnFilter(studentMarksDTOColumn ->
-                                            studentMarksDTOColumn.isVisible() &&
-                                                    !studentMarksDTOColumn.getKey().equals("Chart"))
-                                    .withAvailableFormats(xlsxFormat, pdfFormat, htmlFormat)
-                                    .withPreSelectedFormat(xlsxFormat)
-                                    .withColumnConfigurationBuilder(new ColumnConfigurationBuilder());
+                                XlsxFormat xlsxFormat = new XlsxFormat();
+                                PdfFormat pdfFormat = new PdfFormat();
+                                HtmlFormat htmlFormat = new HtmlFormat();
 
-                            gridExporter.open();
+                                gridExporter = GridExporter
+                                        .newWithDefaults(marksGrid)
+                                        .withFileName(fileName)
+                                        // Ignoring chart column
+                                        .withColumnFilter(studentMarksDTOColumn ->
+                                                studentMarksDTOColumn.isVisible() &&
+                                                        !studentMarksDTOColumn.getKey().equals("Chart"))
+                                        .withAvailableFormats(xlsxFormat, pdfFormat, htmlFormat)
+                                        .withPreSelectedFormat(xlsxFormat)
+                                        .withColumnConfigurationBuilder(new ColumnConfigurationBuilder());
+
+                                gridExporter.open();
+                            } else {
+                                NotificationUtils.showErrorNotification("Please select values for all the filters!");
+                            }
                         }
                 ));
         horizontalLayout.setWidthFull();
@@ -166,6 +178,14 @@ public class MarksView extends VerticalLayout {
         add(new H3("Marks View"), FilterLayout, horizontalLayout, marksGrid);
 
         setSizeFull();
+    }
+
+    private boolean isFilterInValid() {
+        return examTypeComboBox.getValue() == null ||
+                semesterComboBox.getValue() == null ||
+                departmentComboBox.getValue() == null ||
+                academicYearComboBox.getValue() == null ||
+                studentSectionComboBox.getValue() == null;
     }
 
     private static Component createFilterHeader(Consumer<String> filterChangeConsumer) {
@@ -185,22 +205,32 @@ public class MarksView extends VerticalLayout {
         List<DepartmentEntity> departments = departmentService.findAll();
         Semester[] semesters = Semester.values();
         ExamType[] examTypes = ExamType.values();
+        StudentSection[] studentSections = StudentSection.values();
 
         semesterComboBox.setItems(semesters);
         semesterComboBox.setItemLabelGenerator(Semester::getDisplayName);
         semesterComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
+        semesterComboBox.setRequiredIndicatorVisible(true);
 
         examTypeComboBox.setItems(examTypes);
         examTypeComboBox.setItemLabelGenerator(ExamType::getDisplayName);
         examTypeComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
+        examTypeComboBox.setRequiredIndicatorVisible(true);
 
         academicYearComboBox.setItems(academicYears);
         academicYearComboBox.setItemLabelGenerator(item -> item.getStartYear() + " - " + item.getEndYear());
         academicYearComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
+        academicYearComboBox.setRequiredIndicatorVisible(true);
 
         departmentComboBox.setItems(departments);
         departmentComboBox.setItemLabelGenerator(item -> item.getName() + " - " + item.getShortName());
         departmentComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
+        departmentComboBox.setRequiredIndicatorVisible(true);
+
+        studentSectionComboBox.setItems(studentSections);
+        studentSectionComboBox.setItemLabelGenerator(StudentSection::getDisplayName);
+        studentSectionComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
+        studentSectionComboBox.setRequiredIndicatorVisible(true);
     }
 
     private void updateTotalPassFailCounts(List<StudentMarksDTO> allStudentMarks, PassFailCounts counts) {
@@ -256,18 +286,27 @@ public class MarksView extends VerticalLayout {
         Semester selectedSemester = semesterComboBox.getValue();
         DepartmentEntity selectedDepartment = departmentComboBox.getValue();
         AcademicYearEntity selectedAcademicYear = academicYearComboBox.getValue();
+        StudentSection studentSection = studentSectionComboBox.getValue();
 
-        if (selectedExamType == null || selectedSemester == null || selectedDepartment == null || selectedAcademicYear == null) {
+        if (isAllFiltersNotNull(
+                selectedExamType,
+                selectedSemester,
+                selectedDepartment,
+                selectedAcademicYear,
+                studentSection
+        )) {
             NotificationUtils.showErrorNotification("Please select values for all the filters!");
             return;
         }
 
         // Set up grid data for all students
-        List<User> allStudents = userService.findStudentsByDepartmentAndRoleAndAcademicYear(
+        List<User> allStudents = userService.findStudentsByDepartmentAndRoleAndAcademicYearAndSection(
                 selectedDepartment,
                 Role.STUDENT,
-                selectedAcademicYear
+                selectedAcademicYear,
+                studentSection
         );
+
         List<StudentMarksDTO> allStudentMarks = new ArrayList<>();
 
         for (User student : allStudents) {
@@ -319,8 +358,7 @@ public class MarksView extends VerticalLayout {
         setupColumns(subjects);
 
         for (SubjectEntity subject : subjects) {
-
-            Grid.Column<StudentMarksDTO> columnByKey = marksGrid.getColumnByKey(SharedUtil.capitalize(subject.getSubjectName().toLowerCase()));
+            Grid.Column<StudentMarksDTO> columnByKey = marksGrid.getColumnByKey(UIUtils.toCapitalize(subject.getSubjectName()));
             if (columnByKey != null) {
                 Integer pass = passFailCounts.subjectPassCounts.getOrDefault(subject, 0);
                 Integer totalStudents = passFailCounts.subjectPresentCounts.getOrDefault(subject, 0);
@@ -345,7 +383,7 @@ public class MarksView extends VerticalLayout {
                 columnByKey.setFooter(layout);
             }
 
-            Grid.Column<StudentMarksDTO> attendanceStatus = marksGrid.getColumnByKey(SharedUtil.capitalize(subject.getSubjectName().toLowerCase() + " Attendance"));
+            Grid.Column<StudentMarksDTO> attendanceStatus = marksGrid.getColumnByKey(UIUtils.toCapitalize(subject.getSubjectName() + " Attendance"));
             if (attendanceStatus != null) {
                 Integer present = passFailCounts.subjectPresentCounts.getOrDefault(subject, 0);
                 Integer absent = passFailCounts.subjectAbsentCounts.getOrDefault(subject, 0);
@@ -398,7 +436,7 @@ public class MarksView extends VerticalLayout {
                 .setSortable(true)
                 .setTextAlign(ColumnTextAlign.CENTER)
                 .setAutoWidth(true)
-                .setKey("Total Pass/Fail");
+                .setKey("Pass/Fail");
 
         Grid.Column<StudentMarksDTO> totalPresentAbsentColumn = marksGrid.addColumn(studentMarksDTO ->
                         studentMarksDTO.getTotalPresent() + "/" + studentMarksDTO.getTotalAbsent())
@@ -406,7 +444,7 @@ public class MarksView extends VerticalLayout {
                 .setSortable(true)
                 .setTextAlign(ColumnTextAlign.CENTER)
                 .setAutoWidth(true)
-                .setKey("PRE/ABS");
+                .setKey("Pre/Abs");
 
 
         contextMenu.addColumnToggleItem(totalPassFailColumn);
@@ -430,6 +468,40 @@ public class MarksView extends VerticalLayout {
         contextMenu.addColumnToggleItem(chartButtonColumn);
 
         dataProvider = marksGrid.setItems(allStudentMarks);
+    }
+
+    private boolean isAllFiltersNotNull(ExamType selectedExamType,
+                                        Semester selectedSemester,
+                                        DepartmentEntity selectedDepartment,
+                                        AcademicYearEntity selectedAcademicYear,
+                                        StudentSection studentSection
+    ) {
+
+        if (selectedExamType == null) {
+            examTypeComboBox.setErrorMessage("Exam Type is required");
+            examTypeComboBox.setInvalid(true);
+        }
+        if (selectedSemester == null) {
+            semesterComboBox.setErrorMessage("Semester is required");
+            semesterComboBox.setInvalid(true);
+        }
+        if (selectedDepartment == null) {
+            departmentComboBox.setErrorMessage("Department is required");
+            departmentComboBox.setInvalid(true);
+        }
+        if (selectedAcademicYear == null) {
+            academicYearComboBox.setErrorMessage("Academic Year is required");
+            academicYearComboBox.setInvalid(true);
+        }
+        if (studentSection == null) {
+            studentSectionComboBox.setErrorMessage("Student Section is required");
+            studentSectionComboBox.setInvalid(true);
+        }
+        return selectedExamType == null
+                || selectedSemester == null
+                || selectedDepartment == null
+                || selectedAcademicYear == null
+                || studentSection == null;
     }
 
     private Chart createPieBarChart(Integer pass, int fail, SubjectEntity subject) {
@@ -467,7 +539,7 @@ public class MarksView extends VerticalLayout {
             markField.setValue(0.0); // Default value for the fields
             markField.setWidthFull();
 
-            String subjectCapitalize = SharedUtil.capitalize(subject.getSubjectName().toLowerCase());
+            String subjectCapitalize = UIUtils.toCapitalize(subject.getSubjectName());
             Grid.Column<StudentMarksDTO> marksColumn = marksGrid.addEditColumn(studentMarksDTO ->
                     {
                         StudentSubjectInfo subjectInfo = studentMarksDTO.getSubjectInfoMap()
@@ -551,7 +623,7 @@ public class MarksView extends VerticalLayout {
 
             headerRow.getCell(marksColumn).setComponent(passFailFilter);
 
-            String subjectShortForm = SharedUtil.capitalize(subject.getSubjectShortForm().toLowerCase());
+            String subjectShortForm = UIUtils.toCapitalize(subject.getSubjectShortForm());
             Grid.Column<StudentMarksDTO> attendanceStatus = marksGrid.addColumn(new TextRenderer<>(
                             studentMarksDTO -> {
                                 StudentSubjectInfo subjectInfo = studentMarksDTO.getSubjectInfoMap()

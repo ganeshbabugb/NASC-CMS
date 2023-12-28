@@ -1,7 +1,7 @@
 package com.nasc.application.data.components;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
-import com.nasc.application.data.model.DepartmentEntity;
+import com.nasc.application.data.core.DepartmentEntity;
 import com.nasc.application.services.DepartmentService;
 import com.nasc.application.services.dataprovider.GenericDataProvider;
 import com.nasc.application.utils.NotificationUtils;

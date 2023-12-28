@@ -1,6 +1,6 @@
 package com.nasc.application.views.address;
 
-import com.nasc.application.data.model.AddressDetails;
+import com.nasc.application.data.core.AddressDetails;
 import com.nasc.application.services.CountryService;
 import com.nasc.application.services.SampleAddressService;
 import com.nasc.application.services.StateService;

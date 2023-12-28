@@ -1,13 +1,13 @@
-package com.nasc.application.data.model;
+package com.nasc.application.data.core;
 
-import com.nasc.application.data.model.base.BaseEntity;
+import com.nasc.application.data.core.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "t_blood_groups")
-public class BloodGroupEntity implements BaseEntity {
+@Table(name = "t_states")
+public class StateEntity implements BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

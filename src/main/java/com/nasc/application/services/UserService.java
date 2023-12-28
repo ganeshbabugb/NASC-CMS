@@ -1,9 +1,9 @@
 package com.nasc.application.services;
 
-import com.nasc.application.data.model.*;
-import com.nasc.application.data.model.enums.Role;
+import com.nasc.application.data.core.*;
+import com.nasc.application.data.core.enums.Role;
+import com.nasc.application.data.core.enums.StudentSection;
 import com.nasc.application.data.repository.UserRepository;
-import com.nasc.application.security.AuthenticatedUser;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,9 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.Principal;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class UserService {
@@ -30,17 +30,15 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder;
 
-    private final AuthenticatedUser authenticatedUser;
-
-    public UserService(UserRepository userRepository, ActiveUsersManagerService activeUsersManagerService,
+    public UserService(UserRepository userRepository,
+                       ActiveUsersManagerService activeUsersManagerService,
                        PasswordEncoder passwordEncoder,
-                       AuthenticationContext authenticationContext, AuthenticatedUser authenticatedUser
+                       AuthenticationContext authenticationContext
     ) {
         this.activeUsersManagerService = activeUsersManagerService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationContext = authenticationContext;
-        this.authenticatedUser = authenticatedUser;
     }
 
     public Optional<User> get(Long id) {
@@ -136,24 +134,21 @@ public class UserService {
         userRepository.save(currentUser);
     }
 
-    // To get user's based on department and role and academic year
-    public List<User> findStudentsByDepartmentAndRoleAndAcademicYear(Role targetRole, AcademicYearEntity academicYear) {
-        Optional<User> user = authenticatedUser.get();
-        return user.map(value -> userRepository.findUsersByDepartmentAndRoleAndAcademicYear(value.getDepartment(), targetRole, academicYear))
-                .orElse(Collections.emptyList());
+    public List<User> findStudentsByDepartmentAndRoleAndAcademicYearAndSection(DepartmentEntity departmentEntity,
+                                                                               Role targetRole,
+                                                                               AcademicYearEntity academicYear,
+                                                                               StudentSection studentSection
+    ) {
+        return userRepository.findUsersByDepartmentAndRoleAndAcademicYearAndStudentSection(
+                departmentEntity,
+                targetRole,
+                academicYear,
+                studentSection
+        );
     }
 
-    // To get user's based on department and role and academic year
-    public List<User> findStudentsByDepartmentAndRoleAndAcademicYear(DepartmentEntity departmentEntity, Role targetRole, AcademicYearEntity academicYear) {
-        return userRepository.findUsersByDepartmentAndRoleAndAcademicYear(departmentEntity, targetRole, academicYear);
-    }
-
-
-    // To get user's based on department and role
-    public List<User> findUsersByDepartmentAndRole(Role targetRole) {
-        Optional<User> user = authenticatedUser.get();
-        return user.map(value -> userRepository.findUsersByDepartmentAndRole(value.getDepartment(), targetRole))
-                .orElse(Collections.emptyList());
+    public List<User> findUsersByDepartmentAndRole(DepartmentEntity department, Role targetRole) {
+        return userRepository.findUsersByDepartmentAndRole(department, targetRole);
     }
 
     // To check the list of user already available are not
@@ -166,11 +161,7 @@ public class UserService {
         userRepository.saveAll(users);
     }
 
-    public List<User> findUsersByRole(Role role) {
-        return userRepository.findUsersByRolesContains(role);
-    }
-
-    public List<User> findUsersByDepartmentAndAcademicYear(DepartmentEntity selectedDepartment, AcademicYearEntity selectedAcademicYear) {
-        return userRepository.findUsersByDepartmentAndAcademicYear(selectedDepartment, selectedAcademicYear);
+    public List<User> findUsersByRoles(Set<Role> roles) {
+        return userRepository.findUsersByRolesIn(roles);
     }
 }

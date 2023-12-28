@@ -1,7 +1,8 @@
-package com.nasc.application.data.model;
+package com.nasc.application.data.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.nasc.application.data.model.enums.Role;
+import com.nasc.application.data.core.enums.Role;
+import com.nasc.application.data.core.enums.StudentSection;
 import com.opencsv.bean.CsvBindByName;
 import jakarta.persistence.*;
 
@@ -24,6 +25,8 @@ public class User extends AbstractEntity {
     @Enumerated(EnumType.STRING)
     @ElementCollection(fetch = FetchType.EAGER)
     private Set<Role> roles;
+    @Enumerated(EnumType.STRING)
+    private StudentSection studentSection;
 
     /*
     @Lob
@@ -55,7 +58,6 @@ public class User extends AbstractEntity {
     @JoinColumn(name = "personal_details_id")
     private PersonalDetails personalDetails;
 
-
     public User() {
         this.personalDetailsCompleted = Boolean.FALSE;
         this.addressDetailsCompleted = Boolean.FALSE;
@@ -76,6 +78,14 @@ public class User extends AbstractEntity {
 
     public void setDepartment(DepartmentEntity department) {
         this.department = department;
+    }
+
+    public StudentSection getStudentSection() {
+        return studentSection;
+    }
+
+    public void setStudentSection(StudentSection studentSection) {
+        this.studentSection = studentSection;
     }
 
     public PersonalDetails getPersonalDetails() {

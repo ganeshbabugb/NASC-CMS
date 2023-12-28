@@ -1,7 +1,7 @@
 package com.nasc.application.views;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
-import com.nasc.application.data.model.User;
+import com.nasc.application.data.core.User;
 import com.nasc.application.security.AuthenticatedUser;
 import com.nasc.application.views.about.AboutView;
 import com.nasc.application.views.activeusers.ActiveUsersView;
@@ -12,7 +12,7 @@ import com.nasc.application.views.forms.adderss.AddressFormView;
 import com.nasc.application.views.forms.bank.BankDetailsFormView;
 import com.nasc.application.views.forms.personal.PersonalFormView;
 import com.nasc.application.views.marks.entry.MarkEntryView;
-import com.nasc.application.views.newpac.MarksView;
+import com.nasc.application.views.marks.table.MarksView;
 import com.nasc.application.views.password.PasswordChangeView;
 import com.nasc.application.views.professor.status.ProfessorStatusView;
 import com.nasc.application.views.student.StudentMasterDetailsView;

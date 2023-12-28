@@ -1,7 +1,7 @@
 package com.nasc.application.data.components;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
-import com.nasc.application.data.model.BloodGroupEntity;
+import com.nasc.application.data.core.BloodGroupEntity;
 import com.nasc.application.services.BloodGroupService;
 import com.nasc.application.services.dataprovider.GenericDataProvider;
 import com.nasc.application.utils.NotificationUtils;

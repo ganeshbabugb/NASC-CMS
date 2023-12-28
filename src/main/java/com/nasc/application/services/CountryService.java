@@ -1,6 +1,6 @@
 package com.nasc.application.services;
 
-import com.nasc.application.data.model.CountryEntity;
+import com.nasc.application.data.core.CountryEntity;
 import com.nasc.application.data.repository.CountryRepository;
 import com.nasc.application.services.base.BaseServiceClass;
 import org.springframework.beans.factory.annotation.Autowired;

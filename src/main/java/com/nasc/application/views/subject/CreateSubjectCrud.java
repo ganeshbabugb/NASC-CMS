@@ -1,10 +1,10 @@
 package com.nasc.application.views.subject;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
-import com.nasc.application.data.model.SubjectEntity;
-import com.nasc.application.data.model.enums.MajorOfPaper;
-import com.nasc.application.data.model.enums.PaperType;
-import com.nasc.application.data.model.enums.Semester;
+import com.nasc.application.data.core.SubjectEntity;
+import com.nasc.application.data.core.enums.MajorOfPaper;
+import com.nasc.application.data.core.enums.PaperType;
+import com.nasc.application.data.core.enums.Semester;
 import com.nasc.application.services.SubjectService;
 import com.nasc.application.services.dataprovider.GenericDataProvider;
 import com.nasc.application.utils.NotificationUtils;
@@ -21,6 +21,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.RolesAllowed;
@@ -33,8 +34,8 @@ import software.xdev.vaadin.grid_exporter.column.ColumnConfigurationBuilder;
 @UIScope
 @Route(value = "create-subject", layout = MainLayout.class)
 @RolesAllowed("HOD")
+@PageTitle("Create Subject")
 public class CreateSubjectCrud extends VerticalLayout {
-    // TODO : FIX THE CORRECT DISPLAY NAME IN CRUD
     public static final String EDIT_COLUMN = "vaadin-crud-edit-column";
     private final SubjectService service;
     private final Crud<SubjectEntity> crud;

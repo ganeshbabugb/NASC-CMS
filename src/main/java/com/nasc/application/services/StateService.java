@@ -1,6 +1,6 @@
 package com.nasc.application.services;
 
-import com.nasc.application.data.model.StateEntity;
+import com.nasc.application.data.core.StateEntity;
 import com.nasc.application.data.repository.StateRepository;
 import com.nasc.application.services.base.BaseServiceClass;
 import org.springframework.beans.factory.annotation.Autowired;

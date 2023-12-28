@@ -1,6 +1,6 @@
 package com.nasc.application.services;
 
-import com.nasc.application.data.model.SamplePerson;
+import com.nasc.application.data.core.SamplePerson;
 import com.nasc.application.data.repository.SamplePersonRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,10 +36,6 @@ public class SamplePersonService {
 
     public Page<SamplePerson> list(Pageable pageable, Specification<SamplePerson> filter) {
         return repository.findAll(filter, pageable);
-    }
-
-    public int count() {
-        return (int) repository.count();
     }
 
 }

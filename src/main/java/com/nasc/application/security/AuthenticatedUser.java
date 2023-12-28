@@ -1,6 +1,6 @@
 package com.nasc.application.security;
 
-import com.nasc.application.data.model.User;
+import com.nasc.application.data.core.User;
 import com.nasc.application.data.repository.UserRepository;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import org.springframework.security.core.context.SecurityContextHolder;

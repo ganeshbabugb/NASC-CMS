@@ -1,6 +1,6 @@
-package com.nasc.application.data.model;
+package com.nasc.application.data.core;
 
-import com.nasc.application.data.model.base.BaseEntity;
+import com.nasc.application.data.core.base.BaseEntity;
 import jakarta.persistence.*;
 
 import java.util.HashSet;

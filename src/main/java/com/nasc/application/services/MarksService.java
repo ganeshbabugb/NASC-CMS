@@ -1,13 +1,13 @@
 package com.nasc.application.services;
 
-import com.nasc.application.data.model.ExamEntity;
-import com.nasc.application.data.model.MarksEntity;
-import com.nasc.application.data.model.SubjectEntity;
-import com.nasc.application.data.model.User;
-import com.nasc.application.data.model.dto.StudentMarksDTO;
-import com.nasc.application.data.model.dto.StudentSubjectInfo;
-import com.nasc.application.data.model.enums.ExamType;
-import com.nasc.application.data.model.enums.Semester;
+import com.nasc.application.data.core.ExamEntity;
+import com.nasc.application.data.core.MarksEntity;
+import com.nasc.application.data.core.SubjectEntity;
+import com.nasc.application.data.core.User;
+import com.nasc.application.data.core.dto.StudentMarksDTO;
+import com.nasc.application.data.core.dto.StudentSubjectInfo;
+import com.nasc.application.data.core.enums.ExamType;
+import com.nasc.application.data.core.enums.Semester;
 import com.nasc.application.data.repository.MarksRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -85,7 +85,7 @@ public class MarksService {
         return subjectInfo;
     }
 
-    public StudentMarksDTO updateStudentMarks(StudentMarksDTO studentMarksDTO) {
+    public void updateStudentMarks(StudentMarksDTO studentMarksDTO) {
         User student = studentMarksDTO.getStudent();
 
         for (Map.Entry<SubjectEntity, StudentSubjectInfo> entry : studentMarksDTO.getSubjectInfoMap().entrySet()) {
@@ -121,7 +121,6 @@ public class MarksService {
                 }
             }
         }
-        return studentMarksDTO;
     }
 
     private boolean marksHaveChanged(Double modifiedMarks, MarksEntity marksEntity) {

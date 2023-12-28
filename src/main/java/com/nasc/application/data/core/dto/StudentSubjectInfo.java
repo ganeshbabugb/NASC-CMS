@@ -1,4 +1,4 @@
-package com.nasc.application.data.model.dto;
+package com.nasc.application.data.core.dto;
 
 public class StudentSubjectInfo {
     private Double marks;

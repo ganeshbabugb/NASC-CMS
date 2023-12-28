@@ -1,6 +1,6 @@
 package com.nasc.application.dataprovider;
 
-import com.nasc.application.data.model.MarksEntity;
+import com.nasc.application.data.core.MarksEntity;
 import com.nasc.application.data.repository.MarksRepository;
 import com.vaadin.flow.data.provider.CallbackDataProvider;
 import com.vaadin.flow.data.provider.Query;

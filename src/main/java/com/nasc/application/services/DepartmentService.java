@@ -1,6 +1,6 @@
 package com.nasc.application.services;
 
-import com.nasc.application.data.model.DepartmentEntity;
+import com.nasc.application.data.core.DepartmentEntity;
 import com.nasc.application.data.repository.DepartmentRepository;
 import com.nasc.application.services.base.BaseServiceClass;
 import org.springframework.beans.factory.annotation.Autowired;

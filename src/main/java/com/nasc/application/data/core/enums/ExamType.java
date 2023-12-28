@@ -1,8 +1,6 @@
-package com.nasc.application.data.model.enums;
+package com.nasc.application.data.core.enums;
 
-import com.vaadin.flow.shared.util.SharedUtil;
-
-import java.util.Locale;
+import com.nasc.application.utils.UIUtils;
 
 public enum ExamType {
     INTERNAL_1,
@@ -11,8 +9,7 @@ public enum ExamType {
     SEMESTER;
 
     public String getDisplayName() {
-        String capitalize = SharedUtil.capitalize(name().toLowerCase(Locale.ENGLISH));
+        String capitalize = UIUtils.toCapitalize(name());
         return capitalize.contains("_") ? capitalize.replace("_", " ") : capitalize;
-
     }
 }

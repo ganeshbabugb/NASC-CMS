@@ -1,6 +1,6 @@
 package com.nasc.application.security;
 
-import com.nasc.application.data.model.User;
+import com.nasc.application.data.core.User;
 import com.nasc.application.data.repository.UserRepository;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

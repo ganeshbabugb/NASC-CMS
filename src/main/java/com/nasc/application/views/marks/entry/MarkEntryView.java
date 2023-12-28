@@ -1,10 +1,11 @@
 package com.nasc.application.views.marks.entry;
 
 import com.nasc.application.data.components.Divider;
-import com.nasc.application.data.model.*;
-import com.nasc.application.data.model.enums.ExamType;
-import com.nasc.application.data.model.enums.Role;
-import com.nasc.application.data.model.enums.Semester;
+import com.nasc.application.data.core.*;
+import com.nasc.application.data.core.enums.ExamType;
+import com.nasc.application.data.core.enums.Role;
+import com.nasc.application.data.core.enums.Semester;
+import com.nasc.application.data.core.enums.StudentSection;
 import com.nasc.application.security.AuthenticatedUser;
 import com.nasc.application.services.*;
 import com.nasc.application.utils.NotificationUtils;
@@ -59,6 +60,7 @@ public class MarkEntryView extends Div {
     private TextField typeOfPaperTextField;
     private TextField subjectCodeTextField;
     private ComboBox<AcademicYearEntity> academicYearComboBox;
+    private ComboBox<StudentSection> studentSectionComboBox;
 
     //Exam Fields
     private DatePicker examDateDatePicker;
@@ -69,8 +71,9 @@ public class MarkEntryView extends Div {
     private NumberField portionCoveredNumberField;
     private IntegerField examDurationIntegerField;
     private DatePicker examCorrectionDatePicker;
-    private MultiSelectComboBox<User> professorMultiSelectComboBox;
+    private MultiSelectComboBox<User> userMultiSelectComboBox;
     private Button createExamButton;
+    private Button markEnterButton;
     private NumberField maxMarksNumberField;
 
     //Layouts
@@ -115,9 +118,9 @@ public class MarkEntryView extends Div {
 
         departmentComboBox.addValueChangeListener(event -> updateSubjectOptions());
         semesterComboBox.addValueChangeListener(event -> updateSubjectOptions());
-        examComboBox.addValueChangeListener(event -> {
+        markEnterButton.addClickListener(event -> {
             // Fetch the selected exam
-            ExamEntity selectedExam = event.getValue();
+            ExamEntity selectedExam = examComboBox.getValue();
 
             // Update the student input fields based on the selected exam
             updateStudentFieldsForExam(selectedExam);
@@ -141,6 +144,7 @@ public class MarkEntryView extends Div {
         List<DepartmentEntity> departments = departmentService.findAll();
         Semester[] semester = Semester.values();
         List<AcademicYearEntity> academicYears = academicYearService.findAll();
+        StudentSection[] values = StudentSection.values();
 
         //Creating forms
         markFormLayout = new FormLayout();
@@ -157,6 +161,10 @@ public class MarkEntryView extends Div {
         academicYearComboBox.setItems(academicYears);
         academicYearComboBox.setItemLabelGenerator(item -> item.getStartYear() + "-" + item.getEndYear());
 
+        studentSectionComboBox = new ComboBox<>("Select Student Section");
+        studentSectionComboBox.setItems(values);
+        studentSectionComboBox.setItemLabelGenerator(StudentSection::getDisplayName);
+
         subjectComboBox.setPlaceholder("Select a subject");
 
         subjectShortFormTextField = new TextField("Subject Short Form");
@@ -171,6 +179,9 @@ public class MarkEntryView extends Div {
         typeOfPaperTextField = new TextField("Type Of Paper");
         typeOfPaperTextField.setReadOnly(true);
 
+        markEnterButton = new Button("Start Entering Mark");
+        markEnterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
         // Add a listener to handle subject selection
         subjectComboBox.addValueChangeListener(event -> handleSubjectSelection());
 
@@ -181,7 +192,8 @@ public class MarkEntryView extends Div {
                 majorTextField,
                 typeOfPaperTextField,
                 subjectCodeTextField,
-                academicYearComboBox
+                academicYearComboBox,
+                studentSectionComboBox
         );
 
         primaryLayout.add(markFormLayout);
@@ -218,8 +230,14 @@ public class MarkEntryView extends Div {
         //Creating exam form
         examFormLayout = new FormLayout();
 
-        // TODO : ADD HOD ROLES TO THE DROP DOWN!.
-        List<User> professors = userService.findUsersByRole(Role.PROFESSOR);
+        Set<Role> rolesToFilter = new HashSet<>();
+        rolesToFilter.add(Role.PROFESSOR);
+        rolesToFilter.add(Role.HOD);
+
+        // Removed Current User
+        List<User> users = userService.findUsersByRoles(rolesToFilter);
+        users.remove(currentUser);
+
         ExamType[] examTypeEnum = ExamType.values();
 
         examDateDatePicker = new DatePicker("Exam Date");
@@ -237,11 +255,11 @@ public class MarkEntryView extends Div {
         createExamButton = new Button("Create Exam", event -> createExam());
         createExamButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        professorMultiSelectComboBox = new MultiSelectComboBox<>("Subject Staffs");
-        professorMultiSelectComboBox.setItems(professors);
-        professorMultiSelectComboBox.setPlaceholder("Select persons");
-        professorMultiSelectComboBox.setAutoExpand(MultiSelectComboBox.AutoExpandMode.BOTH);
-        professorMultiSelectComboBox.setItemLabelGenerator(item -> item.getUsername() + " [" + item.getRegisterNumber() + "]");
+        userMultiSelectComboBox = new MultiSelectComboBox<>("Subject Staffs");
+        userMultiSelectComboBox.setItems(users);
+        userMultiSelectComboBox.setPlaceholder("Select persons");
+        userMultiSelectComboBox.setAutoExpand(MultiSelectComboBox.AutoExpandMode.BOTH);
+        userMultiSelectComboBox.setItemLabelGenerator(item -> item.getUsername() + " [" + item.getRegisterNumber() + "]");
 
         examFormLayout.add(
                 examDateDatePicker,
@@ -251,7 +269,7 @@ public class MarkEntryView extends Div {
                 portionCoveredNumberField,
                 examDurationIntegerField,
                 examCorrectionDatePicker,
-                professorMultiSelectComboBox,
+                userMultiSelectComboBox,
                 createExamButton
         );
 
@@ -312,7 +330,7 @@ public class MarkEntryView extends Div {
         exam.setExamDuration(examDurationIntegerField.getValue());
         exam.setExamCorrectionDate(examCorrectionDatePicker.getValue());
 
-        Set<User> selectedProfessors = professorMultiSelectComboBox.getSelectedItems();
+        Set<User> selectedProfessors = userMultiSelectComboBox.getSelectedItems();
         if (!selectedProfessors.isEmpty()) {
             // Add both the current user and selected professors to the responsibleUsers set
             Set<User> responsibleUsers = new HashSet<>(selectedProfessors);
@@ -328,7 +346,7 @@ public class MarkEntryView extends Div {
         return exam;
     }
 
-    private void createNewMarks(User student, SubjectEntity subject, ExamEntity exam, Double marksObtained, boolean isAbsent) {
+    private boolean createNewMarks(User student, SubjectEntity subject, ExamEntity exam, Double marksObtained, boolean isAbsent) {
         // Check if the obtained marks are valid
         if (!isAbsent) {
             if (isValidMark(marksObtained, exam)) {
@@ -351,6 +369,7 @@ public class MarkEntryView extends Div {
 
                     NotificationUtils.showSuccessNotification("Marks saved successfully");
                 }
+                return true;
             } else {
                 NotificationUtils.showErrorNotification("Please enter valid marks within the specified range");
             }
@@ -369,13 +388,15 @@ public class MarkEntryView extends Div {
                 marksService.saveMarks(marksEntity);
 
                 NotificationUtils.showSuccessNotification("Marks saved successfully");
+                return true;
             } else {
                 NotificationUtils.showInfoNotification("Marks for the selected student, subject, and exam already exist.");
             }
         }
+        return false;
     }
 
-    private void updateMarks(User student, SubjectEntity subject, Double marksObtained, boolean isAbsent, ExamEntity exam) {
+    private boolean updateMarks(User student, SubjectEntity subject, Double marksObtained, boolean isAbsent, ExamEntity exam) {
         MarksEntity existingMarks = marksService.findMarkByStudentAndSubject(student, subject, exam).orElse(null);
         if (existingMarks != null) {
             existingMarks.setAbsent(isAbsent);
@@ -386,7 +407,7 @@ public class MarkEntryView extends Div {
                 } else {
                     // Display an error notification for invalid marks
                     NotificationUtils.showErrorNotification("Invalid marks. Please enter valid marks within the specified range.");
-                    return; // Do not proceed with the update
+                    return false;
                 }
             } else {
                 // If the user is marked as absent, set obtained marks to null
@@ -397,10 +418,13 @@ public class MarkEntryView extends Div {
 
             // Display a success notification
             NotificationUtils.showSuccessNotification("Marks updated successfully");
+
+            return true;
         } else {
             // If the mark does not exist, you may want to handle this case accordingly
             NotificationUtils.showErrorNotification("Marks do not exist for the selected student and subject.");
         }
+        return false;
     }
 
     private void handleExamSelection() {
@@ -428,13 +452,14 @@ public class MarkEntryView extends Div {
 
         // Add a listener to handle student and exam selection
         examComboBox.addValueChangeListener(event -> handleExamSelection());
-        formLayout.add(examComboBox);
+
+        formLayout.add(examComboBox, markEnterButton);
         primaryLayout.add(formLayout);
     }
 
-    private void saveMarksForStudent(User selectedStudent,
-                                     NumberField marksObtainedTextField,
-                                     Checkbox absentCheckbox) {
+    private boolean saveMarksForStudent(User selectedStudent,
+                                        NumberField marksObtainedTextField,
+                                        Checkbox absentCheckbox) {
         SubjectEntity selectedSubject = subjectComboBox.getValue();
         ExamEntity selectedExam = examComboBox.getValue();
         Double marksObtained = marksObtainedTextField.getValue();
@@ -442,13 +467,17 @@ public class MarkEntryView extends Div {
 
         if (selectedStudent != null && selectedSubject != null && selectedExam != null) {
             try {
-                if (marksService.existsByStudentAndSubjectAndExam(selectedStudent,
-                        selectedSubject, selectedExam)) {
+                if (marksService.existsByStudentAndSubjectAndExam(
+                        selectedStudent,
+                        selectedSubject,
+                        selectedExam
+                )) {
                     // The mark already exists, switch to update mode
-                    updateMarks(selectedStudent, selectedSubject, marksObtained, isAbsent, selectedExam);
+                    return updateMarks(selectedStudent, selectedSubject, marksObtained, isAbsent, selectedExam);
                 } else {
+
                     // Create a new MarksEntity
-                    createNewMarks(selectedStudent, selectedSubject, selectedExam, marksObtained, isAbsent);
+                    return createNewMarks(selectedStudent, selectedSubject, selectedExam, marksObtained, isAbsent);
                 }
             } catch (NumberFormatException e) {
                 NotificationUtils.showErrorNotification("Please enter a valid number for Marks Obtained");
@@ -456,6 +485,9 @@ public class MarkEntryView extends Div {
         } else {
             NotificationUtils.showErrorNotification("Please select a student, subject, and exam before saving marks");
         }
+
+        // Return false if there was an error or marks were not saved/updated
+        return false;
     }
 
     private void updateExamOptions(DepartmentEntity department, Semester semester) {
@@ -466,7 +498,8 @@ public class MarkEntryView extends Div {
             List<ExamEntity> exams = examService.getExamsByCriteria(
                     currentUser,
                     department,
-                    semester
+                    semester,
+                    selectedSubject
             );
 
             // Update the examComboBox options
@@ -496,10 +529,14 @@ public class MarkEntryView extends Div {
         secondaryLayout.removeAll();
 
         // Fetch the students for the selected department, role, and academic year
-        List<User> students = userService.findStudentsByDepartmentAndRoleAndAcademicYear(
+        AcademicYearEntity academicYear = academicYearComboBox.getValue();
+        StudentSection studentSection = studentSectionComboBox.getValue();
+
+        List<User> students = userService.findStudentsByDepartmentAndRoleAndAcademicYearAndSection(
                 departmentComboBox.getValue(),
                 Role.STUDENT,
-                academicYearComboBox.getValue()
+                academicYear,
+                studentSection
         );
 
         // Create a title for the secondary layout
@@ -521,8 +558,20 @@ public class MarkEntryView extends Div {
 
             Checkbox absentCheckbox = getCheckbox(studentTextField);
 
-            Button saveButton = new Button("Save", event -> saveMarksForStudent(student, studentTextField, absentCheckbox));
+            Button saveButton = new Button("Save");
             saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+            // Inside updateStudentFieldsForExam method
+            saveButton.addClickListener(event -> {
+                boolean marksSaved = saveMarksForStudent(student, studentTextField, absentCheckbox);
+
+                // Update the button text based on whether marks were saved or updated
+                if (marksSaved) {
+                    saveButton.setText("Update");
+                } else {
+                    saveButton.setText("Save");
+                }
+            });
 
             // Fetch existing marks for the selected exam and student
             MarksEntity existingMarksEntity = marksService.findMarkByStudentAndSubject(student, subjectComboBox.getValue(), exam)

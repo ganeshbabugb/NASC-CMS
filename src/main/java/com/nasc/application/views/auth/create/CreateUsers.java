@@ -1,10 +1,11 @@
 package com.nasc.application.views.auth.create;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
-import com.nasc.application.data.model.AcademicYearEntity;
-import com.nasc.application.data.model.DepartmentEntity;
-import com.nasc.application.data.model.User;
-import com.nasc.application.data.model.enums.Role;
+import com.nasc.application.data.core.AcademicYearEntity;
+import com.nasc.application.data.core.DepartmentEntity;
+import com.nasc.application.data.core.User;
+import com.nasc.application.data.core.enums.Role;
+import com.nasc.application.data.core.enums.StudentSection;
 import com.nasc.application.services.AcademicYearService;
 import com.nasc.application.services.DepartmentService;
 import com.nasc.application.services.UserService;
@@ -51,6 +52,7 @@ import java.util.stream.Collectors;
 @JsModule("./recipe/copytoclipboard/copytoclipboard.js")
 @Slf4j
 public class CreateUsers extends VerticalLayout {
+
     private final DepartmentService departmentService;
     private final AcademicYearService academicYearService;
     private final UserService userService;
@@ -62,6 +64,7 @@ public class CreateUsers extends VerticalLayout {
     private ComboBox<Role> roleComboBox;
     private ComboBox<DepartmentEntity> departmentComboBox;
     private ComboBox<AcademicYearEntity> academicYearComboBox;
+    private ComboBox<StudentSection> studentSectionComboBox;
 
     public CreateUsers(UserService userService,
                        PasswordEncoder passwordEncoder,
@@ -82,9 +85,7 @@ public class CreateUsers extends VerticalLayout {
         MemoryBuffer buffer = new MemoryBuffer();
         upload = new Upload(buffer);
         upload.setAcceptedFileTypes("text/csv");
-        upload.addSucceededListener(event -> {
-            handleFileUpload(event, buffer.getInputStream());
-        });
+        upload.addSucceededListener(event -> handleFileUpload(event, buffer.getInputStream()));
 
         userGrid = new Grid<>(User.class);
         userGrid.removeAllColumns();
@@ -100,15 +101,28 @@ public class CreateUsers extends VerticalLayout {
         verifyCheckbox = new Checkbox("Verified");
         verifyCheckbox.addValueChangeListener(this::verifyCheckboxChanged);
 
-        createUserButton = new Button("Create Users", event -> createUserButtonClicked(buffer.getInputStream()));
+        createUserButton = new Button("Create Users", event -> {
+            try {
+                if (buffer.getInputStream() == null || buffer.getInputStream().available() == 0) {
+                    NotificationUtils.showInfoNotification("Please upload a CSV file before processing.");
+                    return;
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            createUserButtonClicked(buffer.getInputStream());
+        });
         createUserButton.setEnabled(verifyCheckbox.getValue());
 
         createRoleComboBox();
         createDepartmentComboBox();
         createAcademicYearComboBox();
+        createStudentSectionComboBox();
+        downloadSampleCsv();
 
         academicYearComboBox.setVisible(false);
-        HorizontalLayout horizontalLayout = new HorizontalLayout(roleComboBox, departmentComboBox, academicYearComboBox);
+        studentSectionComboBox.setVisible(false);
+        HorizontalLayout horizontalLayout = new HorizontalLayout(roleComboBox, departmentComboBox, academicYearComboBox, studentSectionComboBox);
 
         // Horizontal layout for checkbox and button
         HorizontalLayout checkboxButtonLayout = new HorizontalLayout(verifyCheckbox, createUserButton);
@@ -121,7 +135,6 @@ public class CreateUsers extends VerticalLayout {
 
         add(upload, horizontalLayout, checkboxButtonLayout, userGrid);
     }
-
 
     private void handleFileUpload(SucceededEvent event, InputStream stream) {
         String mimeType = event.getMIMEType();
@@ -166,22 +179,40 @@ public class CreateUsers extends VerticalLayout {
             Role selectedRole = roleComboBox.getValue();
             DepartmentEntity selectedDepartmentEntity = departmentComboBox.getValue();
             AcademicYearEntity selectedAcademicYearEntity = academicYearComboBox.getValue();
+            StudentSection studentSection = studentSectionComboBox.getValue();
+
+            // Clear previous error messages
+            clearErrorMessages();
+
+            // Validate the selected values
+            boolean isValid = true;
 
             if (selectedRole == null) {
-                NotificationUtils.showInfoNotification("Please select a role");
-                return;
+                setComboBoxError(roleComboBox, "Please select a role");
+                isValid = false;
             }
 
             if (selectedDepartmentEntity == null) {
-                NotificationUtils.showInfoNotification("Please select a department");
-                return;
+                setComboBoxError(departmentComboBox, "Please select a department");
+                isValid = false;
             }
 
             if (selectedRole == Role.STUDENT) {
                 if (selectedAcademicYearEntity == null) {
-                    NotificationUtils.showInfoNotification("Please select a academic year");
-                    return;
+                    setComboBoxError(academicYearComboBox, "Please select an academic year");
+                    isValid = false;
                 }
+
+                if (studentSection == null) {
+                    setComboBoxError(studentSectionComboBox, "Please select an student section");
+                    isValid = false;
+                }
+            }
+
+            if (!isValid) {
+                // Show a common error message or handle the invalid state as needed
+                NotificationUtils.showInfoNotification("Please correct the highlighted fields");
+                return;
             }
 
             // Check for duplicate register numbers
@@ -207,6 +238,7 @@ public class CreateUsers extends VerticalLayout {
                 // Set academic year only for students
                 if (selectedRole == Role.STUDENT) {
                     user.setAcademicYear(selectedAcademicYearEntity);
+                    user.setStudentSection(studentSection);
                 }
 
             });
@@ -240,11 +272,18 @@ public class CreateUsers extends VerticalLayout {
                 // If student role is selected, enable the academic year ComboBox
                 academicYearComboBox.setVisible(true);
                 academicYearComboBox.setRequired(true);
+
+                studentSectionComboBox.setVisible(true);
+                studentSectionComboBox.setRequired(true);
             } else {
                 // If any other role is selected, disable the academic year ComboBox and clear its value
                 academicYearComboBox.setVisible(false);
                 academicYearComboBox.setRequired(false);
                 academicYearComboBox.clear();
+
+                studentSectionComboBox.setVisible(false);
+                studentSectionComboBox.setRequired(false);
+                studentSectionComboBox.clear();
             }
         });
     }
@@ -258,7 +297,13 @@ public class CreateUsers extends VerticalLayout {
         academicYearComboBox = new ComboBox<>("Select Academic Year");
         academicYearComboBox.setItemLabelGenerator(this::generateAcademicYearLabel);
         academicYearComboBox.setItems(academicYearService.findAll());
-        downloadSampleCsv();
+    }
+
+    private void createStudentSectionComboBox() {
+        StudentSection[] values = StudentSection.values();
+        studentSectionComboBox = new ComboBox<>("Select Student Section");
+        studentSectionComboBox.setItems(values);
+        studentSectionComboBox.setItemLabelGenerator(StudentSection::getDisplayName);
     }
 
     private void downloadSampleCsv() {
@@ -302,5 +347,18 @@ public class CreateUsers extends VerticalLayout {
 
         dialog.add(grid);
         dialog.open();
+    }
+
+    // Helpers
+    private void clearErrorMessages() {
+        departmentComboBox.setErrorMessage(null);
+        roleComboBox.setErrorMessage(null);
+        academicYearComboBox.setErrorMessage(null);
+        studentSectionComboBox.setErrorMessage(null);
+    }
+
+    private void setComboBoxError(ComboBox<?> comboBox, String errorMessage) {
+        comboBox.setInvalid(true);
+        comboBox.setErrorMessage(errorMessage);
     }
 }

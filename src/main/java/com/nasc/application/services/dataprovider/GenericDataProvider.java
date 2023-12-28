@@ -1,6 +1,6 @@
 package com.nasc.application.services.dataprovider;
 
-import com.nasc.application.data.model.base.BaseEntity;
+import com.nasc.application.data.core.base.BaseEntity;
 import com.nasc.application.services.base.BaseServiceClass;
 import com.vaadin.flow.component.crud.CrudFilter;
 import com.vaadin.flow.data.provider.AbstractBackEndDataProvider;

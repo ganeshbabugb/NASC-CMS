@@ -1,7 +1,7 @@
 package com.nasc.application.views.forms.adderss;
 
-import com.nasc.application.data.model.AddressDetails;
-import com.nasc.application.data.model.User;
+import com.nasc.application.data.core.AddressDetails;
+import com.nasc.application.data.core.User;
 import com.nasc.application.services.CountryService;
 import com.nasc.application.services.StateService;
 import com.nasc.application.services.UserService;

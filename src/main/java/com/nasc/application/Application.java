@@ -22,7 +22,6 @@ import javax.sql.DataSource;
 //        backgroundColor = "#233348",
 //        themeColor = "#233348",
         offlinePath = "offline.html"
-//        offlineResources = {"./images/offline.png"}
 )
 public class Application implements AppShellConfigurator {
 

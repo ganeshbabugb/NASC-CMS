@@ -1,6 +1,6 @@
 package com.nasc.application.data.repository;
 
-import com.nasc.application.data.model.DepartmentEntity;
+import com.nasc.application.data.core.DepartmentEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

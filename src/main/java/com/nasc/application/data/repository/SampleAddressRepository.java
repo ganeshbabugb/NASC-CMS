@@ -1,7 +1,7 @@
 package com.nasc.application.data.repository;
 
 
-import com.nasc.application.data.model.AddressDetails;
+import com.nasc.application.data.core.AddressDetails;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 

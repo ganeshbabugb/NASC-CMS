@@ -1,10 +1,13 @@
 package com.nasc.application.views.student.status;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
-import com.nasc.application.data.model.AcademicYearEntity;
-import com.nasc.application.data.model.User;
-import com.nasc.application.data.model.enums.Role;
+import com.nasc.application.data.core.AcademicYearEntity;
+import com.nasc.application.data.core.DepartmentEntity;
+import com.nasc.application.data.core.User;
+import com.nasc.application.data.core.enums.Role;
+import com.nasc.application.data.core.enums.StudentSection;
 import com.nasc.application.services.AcademicYearService;
+import com.nasc.application.services.DepartmentService;
 import com.nasc.application.services.UserService;
 import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
@@ -12,7 +15,9 @@ import com.opencsv.CSVWriter;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.ComboBoxVariant;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.grid.Grid;
@@ -26,6 +31,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
@@ -50,35 +56,54 @@ import java.util.List;
 public class StudentsStatusView extends VerticalLayout {
     private final UserService userService;
     private final AcademicYearService academicYearService;
-    private final Button menuButton = new Button("Show/Hide", FontAwesome.Solid.LIST_CHECK.create());
+    private final DepartmentService departmentService;
+    private final Button menuButton = new Button("Show/Hide Columns", FontAwesome.Solid.LIST_CHECK.create());
     private final Anchor downloadLink;
     private final ColumnToggleContextMenu columnToggleContextMenu = new ColumnToggleContextMenu(menuButton);
     private Grid<User> grid;
     private GridListDataView<User> gridListDataView;
     private Grid.Column<User> userColumn;
+    private final Button searchButton;
     private ComboBox<AcademicYearEntity> academicYearFilter;
+    private ComboBox<DepartmentEntity> departmentFilter;
+    private ComboBox<StudentSection> studentSectionFilter;
     //Layouts
     private HorizontalLayout filterLayout;
     private HorizontalLayout exportAndColumnListLayout;
 
-    public StudentsStatusView(UserService service, AcademicYearService academicYearService) {
-        this.userService = service;
+    public StudentsStatusView(UserService userService,
+                              AcademicYearService academicYearService,
+                              DepartmentService departmentService
+    ) {
+        this.userService = userService;
+        this.departmentService = departmentService;
         this.academicYearService = academicYearService;
         addClassName("students-status-view");
         setSizeFull();
+        createDepartmentFilterComponent();
         createAcademicYearFilterComponent();
+        createStudentSectionComboBox();
         createExportAndColumnListLayout();
         downloadLink = createDownloadLink();
+
+        menuButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+
         exportAndColumnListLayout.add(menuButton, downloadLink);
         createGrid();
         createFilterLayout();
-        filterLayout.add(academicYearFilter);
+
+        searchButton = new Button("Search");
+        searchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+        searchButton.addClickListener(buttonClickEvent -> handleAcademicYearFilterChange());
+
+        filterLayout.add(departmentFilter, academicYearFilter, studentSectionFilter, searchButton);
         add(filterLayout, exportAndColumnListLayout, grid);
     }
 
     private void createFilterLayout() {
         filterLayout = new HorizontalLayout();
         filterLayout.setSpacing(true);
+        filterLayout.setAlignItems(Alignment.BASELINE);
     }
 
     private static FontAwesome.Regular.Icon getThumbsUpIcon() {
@@ -106,18 +131,36 @@ public class StudentsStatusView extends VerticalLayout {
         Anchor link = new Anchor();
         link.getElement().setAttribute("download", true);
         Button exportButton = new Button("Export to CSV", FontAwesome.Solid.FILE_EXPORT.create());
+        exportButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
         link.add(exportButton);
         return link;
+    }
+
+    private void createDepartmentFilterComponent() {
+        List<DepartmentEntity> allDepartment = departmentService.findAll();
+        departmentFilter = new ComboBox<>();
+        departmentFilter.setLabel("Filter by Department");
+        departmentFilter.setItems(allDepartment);
+        departmentFilter.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
+        departmentFilter.setItemLabelGenerator(departmentEntity -> departmentEntity.getName() + " " + departmentEntity.getShortName());
+
     }
 
     private void createAcademicYearFilterComponent() {
         List<AcademicYearEntity> academicYears = academicYearService.findAll();
         academicYearFilter = new ComboBox<>();
         academicYearFilter.setLabel("Filter by Academic Year");
-        academicYearFilter.setClearButtonVisible(false);
         academicYearFilter.setItems(academicYears);
         academicYearFilter.setItemLabelGenerator(this::generateAcademicYearLabel);
-        academicYearFilter.addValueChangeListener(this::handleAcademicYearFilterChange);
+        academicYearFilter.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
+    }
+
+    private void createStudentSectionComboBox() {
+        StudentSection[] values = StudentSection.values();
+        studentSectionFilter = new ComboBox<>("Filter By Student Section");
+        studentSectionFilter.setItems(values);
+        studentSectionFilter.setItemLabelGenerator(StudentSection::getDisplayName);
+        studentSectionFilter.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
     }
 
     private void createGrid() {
@@ -130,7 +173,7 @@ public class StudentsStatusView extends VerticalLayout {
         return academicYear.getStartYear() + " - " + academicYear.getEndYear();
     }
 
-    private void handleAcademicYearFilterChange(HasValue.ValueChangeEvent<AcademicYearEntity> event) {
+    private void handleAcademicYearFilterChange() {
         refreshGridData();
     }
 
@@ -159,6 +202,7 @@ public class StudentsStatusView extends VerticalLayout {
         filter.setClearButtonVisible(true);
         filter.setWidth("100%");
         filter.setValueChangeMode(ValueChangeMode.EAGER);
+        filter.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         return filter;
     }
 
@@ -174,6 +218,7 @@ public class StudentsStatusView extends VerticalLayout {
         statusFilter.setPlaceholder("Filter");
         statusFilter.setClearButtonVisible(true);
         statusFilter.setWidth("100%");
+        statusFilter.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
         return statusFilter;
     }
 
@@ -216,6 +261,7 @@ public class StudentsStatusView extends VerticalLayout {
         allFormsFilter.setPlaceholder("Filter");
         allFormsFilter.setClearButtonVisible(true);
         allFormsFilter.setWidth("100%");
+        allFormsFilter.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
         return allFormsFilter;
     }
 
@@ -238,13 +284,16 @@ public class StudentsStatusView extends VerticalLayout {
     private void createGridComponent() {
         grid = new Grid<>();
         grid.setHeight("100%");
-        grid.addThemeVariants(GridVariant.LUMO_COMPACT);
+        grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
     }
 
     private void refreshGridData() {
         AcademicYearEntity academicYearEntity = academicYearFilter.getValue();
-        if (academicYearEntity != null) {
-            List<User> users = getUsersByRoleForLoggedInUserDepartment(academicYearEntity);
+        StudentSection studentSection = studentSectionFilter.getValue();
+        DepartmentEntity department = departmentFilter.getValue();
+
+        if (academicYearEntity != null && studentSection != null && department != null) {
+            List<User> users = getStudentsByRoleForLoggedInUserDepartment(department, academicYearEntity, studentSection);
             if (users.isEmpty()) {
                 if (users.isEmpty()) {
                     NotificationUtils.showWarningNotification("No information recorded for the selected academic year");
@@ -269,47 +318,72 @@ public class StudentsStatusView extends VerticalLayout {
 
     private void createPersonalDetailsColumn() {
         Grid.Column<User> personalDetailsColumn = grid.addColumn(new ComponentRenderer<>(user -> {
-            Span span = new Span(user.getPersonalDetailsCompleted() ? createIcon(VaadinIcon.CHECK) : createIcon(VaadinIcon.CLOCK),
-                    new Span(user.getPersonalDetailsCompleted() ? "Success" : "Pending"));
-            span.getElement().setAttribute("theme", "badge " + (user.getPersonalDetailsCompleted() ? "success" : "pending"));
-            return span;
-        })).setHeader("Personal Details").setKey("personalDetailsCompleted").setComparator(User::getUsername);
+                    Span span = new Span(user.getPersonalDetailsCompleted() ? createIcon(VaadinIcon.CHECK) : createIcon(VaadinIcon.CLOCK),
+                            new Span(user.getPersonalDetailsCompleted() ? "Success" : "Pending"));
+                    span.getElement().setAttribute("theme", "badge " + (user.getPersonalDetailsCompleted() ? "success" : "pending"));
+                    return span;
+                }))
+                .setHeader("Personal Details")
+                .setKey("personalDetailsCompleted")
+                .setComparator(User::getUsername);
+
         columnToggleContextMenu.addColumnToggleItem("Personal Details Completed", personalDetailsColumn);
     }
 
     private void createAddressDetailsColumn() {
         Grid.Column<User> addressDetailsColumn = grid.addColumn(new ComponentRenderer<>(user -> {
-            Span span = new Span(user.getAddressDetailsCompleted() ? createIcon(VaadinIcon.CHECK) : createIcon(VaadinIcon.CLOCK),
-                    new Span(user.getAddressDetailsCompleted() ? "Success" : "Pending"));
-            span.getElement().setAttribute("theme", "badge " + (user.getAddressDetailsCompleted() ? "success" : "pending"));
-            return span;
-        })).setHeader("Address Details").setKey("addressDetailsCompleted").setComparator(User::getUsername);
+                    Span span = new Span(user.getAddressDetailsCompleted() ? createIcon(VaadinIcon.CHECK) : createIcon(VaadinIcon.CLOCK),
+                            new Span(user.getAddressDetailsCompleted() ? "Success" : "Pending"));
+                    span.getElement().setAttribute("theme", "badge " + (user.getAddressDetailsCompleted() ? "success" : "pending"));
+                    return span;
+                }))
+                .setHeader("Address Details")
+                .setKey("addressDetailsCompleted")
+                .setComparator(User::getUsername);
+
+
         columnToggleContextMenu.addColumnToggleItem("Address Details Completed", addressDetailsColumn);
     }
 
     private void createBankDetailsColumn() {
         Grid.Column<User> bankDetailsColumn = grid.addColumn(new ComponentRenderer<>(user -> {
-            Span span = new Span(user.getBankDetailsCompleted() ? createIcon(VaadinIcon.CHECK) : createIcon(VaadinIcon.CLOCK),
-                    new Span(user.getBankDetailsCompleted() ? "Success" : "Pending"));
-            span.getElement().setAttribute("theme", "badge " + (user.getBankDetailsCompleted() ? "success" : "pending"));
-            return span;
-        })).setHeader("Bank Details").setKey("bankDetailsCompleted").setComparator(User::getUsername);
+                    Span span = new Span(user.getBankDetailsCompleted() ? createIcon(VaadinIcon.CHECK) : createIcon(VaadinIcon.CLOCK),
+                            new Span(user.getBankDetailsCompleted() ? "Success" : "Pending"));
+                    span.getElement().setAttribute("theme", "badge " + (user.getBankDetailsCompleted() ? "success" : "pending"));
+                    return span;
+                }))
+                .setHeader("Bank Details")
+                .setKey("bankDetailsCompleted")
+                .setComparator(User::getUsername);
+
         columnToggleContextMenu.addColumnToggleItem("Bank Details", bankDetailsColumn);
     }
 
     private void createAllFormsCompletedColumn() {
         Grid.Column<User> allFormsCompletedColumn = grid.addColumn(new ComponentRenderer<>(user -> {
-            boolean allFormsCompleted = user.isFormsCompleted();
-            Span span = new Span(allFormsCompleted ? getThumbsUpIcon() : getThumbsDownIcon(),
-                    new Span(allFormsCompleted ? "Complete" : "Incomplete"));
-            span.getElement().setAttribute("theme", "badge " + (allFormsCompleted ? "success" : "error"));
-            return span;
-        })).setHeader("All Forms Completed").setKey("allFormsCompleted").setComparator(User::getUsername);
+                    boolean allFormsCompleted = user.isFormsCompleted();
+                    Span span = new Span(allFormsCompleted ? getThumbsUpIcon() : getThumbsDownIcon(),
+                            new Span(allFormsCompleted ? "Complete" : "Incomplete"));
+                    span.getElement().setAttribute("theme", "badge " + (allFormsCompleted ? "success" : "error"));
+                    return span;
+                }))
+                .setHeader("All Forms Completed")
+                .setKey("allFormsCompleted")
+                .setComparator(User::getUsername);
+
         columnToggleContextMenu.addColumnToggleItem("All Forms Completed", allFormsCompletedColumn);
     }
 
-    private List<User> getUsersByRoleForLoggedInUserDepartment(AcademicYearEntity value) {
-        return userService.findStudentsByDepartmentAndRoleAndAcademicYear(Role.STUDENT, value);
+    private List<User> getStudentsByRoleForLoggedInUserDepartment(DepartmentEntity department,
+                                                                  AcademicYearEntity academicYear,
+                                                                  StudentSection studentSection
+    ) {
+        return userService.findStudentsByDepartmentAndRoleAndAcademicYearAndSection(
+                department,
+                Role.STUDENT,
+                academicYear,
+                studentSection
+        );
     }
 
     private Icon createIcon(VaadinIcon vaadinIcon) {
@@ -411,9 +485,7 @@ public class StudentsStatusView extends VerticalLayout {
         }
 
         void addColumnToggleItem(String label, Grid.Column<User> column) {
-            MenuItem menuItem = this.addItem(label, e -> {
-                column.setVisible(e.getSource().isChecked());
-            });
+            MenuItem menuItem = this.addItem(label, e -> column.setVisible(e.getSource().isChecked()));
             menuItem.setCheckable(true);
             menuItem.setChecked(column.isVisible());
             menuItem.setKeepOpen(true);

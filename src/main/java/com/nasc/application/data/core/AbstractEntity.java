@@ -1,4 +1,4 @@
-package com.nasc.application.data.model;
+package com.nasc.application.data.core;
 
 import jakarta.persistence.*;
 

@@ -1,8 +1,10 @@
 package com.nasc.application.views.professor.status;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
-import com.nasc.application.data.model.User;
-import com.nasc.application.data.model.enums.Role;
+import com.nasc.application.data.core.DepartmentEntity;
+import com.nasc.application.data.core.User;
+import com.nasc.application.data.core.enums.Role;
+import com.nasc.application.services.DepartmentService;
 import com.nasc.application.services.UserService;
 import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
@@ -10,7 +12,9 @@ import com.opencsv.CSVWriter;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.ComboBoxVariant;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.grid.Grid;
@@ -24,6 +28,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
@@ -37,37 +42,74 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @PageTitle("Professor Status")
 @Route(value = "professor-status", layout = MainLayout.class)
 @RolesAllowed({"HOD"})
 public class ProfessorStatusView extends VerticalLayout {
+    private final DepartmentService departmentService;
     private final UserService userService;
     private final Anchor downloadLink;
-    private final Button menuButton = new Button("Show/Hide", FontAwesome.Solid.LIST_CHECK.create());
+    private final Button menuButton = new Button("Show/Hide Columns", FontAwesome.Solid.LIST_CHECK.create());
     private final ProfessorStatusView.ColumnToggleContextMenu columnToggleContextMenu = new ProfessorStatusView.ColumnToggleContextMenu(menuButton);
     private Grid<User> grid;
     private GridListDataView<User> gridListDataView;
     private Grid.Column<User> userColumn;
+    // Layer
+    private HorizontalLayout filterLayout;
+    private ComboBox<DepartmentEntity> departmentFilter;
+    private Button searchButton;
 
-    public ProfessorStatusView(UserService service) {
-        this.userService = service;
+    public ProfessorStatusView(UserService userService, DepartmentService departmentService) {
+        this.userService = userService;
+        this.departmentService = departmentService;
         downloadLink = createDownloadLink();  // Add this line to create the download link
         addClassName("professor-status-view");
         setSizeFull();
         createGrid();
-        addData();
+        createFilterLayout();
+
+        menuButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
 
         HorizontalLayout menuButtonLayout = new HorizontalLayout(menuButton, downloadLink);
         menuButtonLayout.setWidthFull();
         menuButtonLayout.setJustifyContentMode(JustifyContentMode.END);
         menuButtonLayout.setAlignItems(Alignment.CENTER);
 
-        add(menuButtonLayout, grid);
+        createDepartmentFilterComponent();
+
+        createSearchButton();
+
+        filterLayout.add(departmentFilter, searchButton);
+        add(filterLayout, menuButtonLayout, grid);
+    }
+
+    private void createSearchButton() {
+        searchButton = new Button("Search");
+        searchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+        searchButton.addClickListener(buttonClickEvent -> {
+            DepartmentEntity selectedDepartment = departmentFilter.getValue();
+            List<User> professors = userService.findUsersByDepartmentAndRole(selectedDepartment, Role.PROFESSOR);
+            gridListDataView = grid.setItems(professors);
+            exportExport(professors);
+        });
+    }
+
+
+    private void createFilterLayout() {
+        filterLayout = new HorizontalLayout();
+        filterLayout.setSpacing(true);
+        filterLayout.setAlignItems(Alignment.BASELINE);
+    }
+
+    private void createDepartmentFilterComponent() {
+        List<DepartmentEntity> allDepartment = departmentService.findAll();
+        departmentFilter = new ComboBox<>();
+        departmentFilter.setItems(allDepartment);
+        departmentFilter.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
+        departmentFilter.setItemLabelGenerator(departmentEntity -> departmentEntity.getName() + " " + departmentEntity.getShortName());
+        departmentFilter.setLabel("Filter By Department");
     }
 
     private static FontAwesome.Regular.Icon getThumbsUpIcon() {
@@ -86,6 +128,7 @@ public class ProfessorStatusView extends VerticalLayout {
         Anchor link = new Anchor();
         link.getElement().setAttribute("download", true);
         Button exportButton = new Button("Export to CSV", FontAwesome.Solid.FILE_EXPORT.create());
+        exportButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
         link.add(exportButton);
         return link;
     }
@@ -94,12 +137,6 @@ public class ProfessorStatusView extends VerticalLayout {
         createGridComponent();
         addColumnsToGrid();
         addFiltersToGrid();
-    }
-
-    private void addData() {
-        List<User> users = getCurrentUserDeptProfessors();
-        gridListDataView = grid.setItems(users);
-        exportExport(users);
     }
 
     private void addFiltersToGrid() {
@@ -127,6 +164,7 @@ public class ProfessorStatusView extends VerticalLayout {
         filter.setClearButtonVisible(true);
         filter.setWidth("100%");
         filter.setValueChangeMode(ValueChangeMode.EAGER);
+        filter.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         return filter;
     }
 
@@ -142,6 +180,7 @@ public class ProfessorStatusView extends VerticalLayout {
         statusFilter.setPlaceholder("Filter");
         statusFilter.setClearButtonVisible(true);
         statusFilter.setWidth("100%");
+        statusFilter.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
         return statusFilter;
     }
 
@@ -205,7 +244,7 @@ public class ProfessorStatusView extends VerticalLayout {
 
     private void createGridComponent() {
         grid = new Grid<>();
-        grid.addThemeVariants(GridVariant.LUMO_COMPACT);
+        grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
         grid.setHeight("100%");
     }
 
@@ -260,10 +299,6 @@ public class ProfessorStatusView extends VerticalLayout {
             return span;
         })).setHeader("All Forms Completed").setKey("allFormsCompleted").setComparator(User::getUsername);
         columnToggleContextMenu.addColumnToggleItem("All Forms Completed", allFormsCompletedColumn);
-    }
-
-    private List<User> getCurrentUserDeptProfessors() {
-        return userService.findUsersByDepartmentAndRole(Role.PROFESSOR);
     }
 
     private Icon createIcon(VaadinIcon vaadinIcon) {
@@ -338,7 +373,13 @@ public class ProfessorStatusView extends VerticalLayout {
                     csvWriter.writeNext(data.toArray(new String[0]));
                 }
 
-                String fileName = "STAFFS.csv";
+                DepartmentEntity department = departmentFilter.getValue();
+
+                StringJoiner stringJoiner = new StringJoiner("_");
+                stringJoiner.add(department.getName());
+                stringJoiner.add(department.getShortName());
+
+                String fileName = stringJoiner + ".csv";
                 StreamResource resource = new StreamResource(fileName,
                         () -> new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
 
@@ -356,9 +397,7 @@ public class ProfessorStatusView extends VerticalLayout {
         }
 
         void addColumnToggleItem(String label, Grid.Column<User> column) {
-            MenuItem menuItem = this.addItem(label, e -> {
-                column.setVisible(e.getSource().isChecked());
-            });
+            MenuItem menuItem = this.addItem(label, e -> column.setVisible(e.getSource().isChecked()));
             menuItem.setCheckable(true);
             menuItem.setChecked(column.isVisible());
             menuItem.setKeepOpen(true);

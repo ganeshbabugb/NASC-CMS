@@ -1,7 +1,7 @@
 package com.nasc.application.views.forms.bank;
 
-import com.nasc.application.data.model.BankDetails;
-import com.nasc.application.data.model.User;
+import com.nasc.application.data.core.BankDetails;
+import com.nasc.application.data.core.User;
 import com.nasc.application.services.UserService;
 import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;

@@ -1,7 +1,7 @@
-package com.nasc.application.data.model.dto;
+package com.nasc.application.data.core.dto;
 
-import com.nasc.application.data.model.SubjectEntity;
-import com.nasc.application.data.model.User;
+import com.nasc.application.data.core.SubjectEntity;
+import com.nasc.application.data.core.User;
 
 import java.util.HashMap;
 import java.util.Map;

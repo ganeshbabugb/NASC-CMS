@@ -6,6 +6,7 @@ import com.nasc.application.services.DistrictService;
 import com.nasc.application.services.dataprovider.GenericDataProvider;
 import com.nasc.application.utils.NotificationUtils;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.crud.BinderCrudEditor;
 import com.vaadin.flow.component.crud.Crud;
 import com.vaadin.flow.component.crud.CrudEditor;
@@ -15,12 +16,12 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.spring.annotation.UIScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import software.xdev.vaadin.grid_exporter.GridExporter;
 import software.xdev.vaadin.grid_exporter.column.ColumnConfigurationBuilder;
-
 
 @Component
 @UIScope
@@ -37,21 +38,24 @@ public class CreateDistrictCrud extends VerticalLayout {
         createGrid();
         setupDataProvider();
         HorizontalLayout horizontalLayout = new HorizontalLayout();
-        horizontalLayout.add(
-                new Button(
-                        "Export",
-                        FontAwesome.Solid.FILE_EXPORT.create(),
-                        e -> {
-                            String fileName = "District";
-                            GridExporter.newWithDefaults(crud.getGrid())
-                                    //Removing Edit Column For Export
-                                    .withColumnFilter(stateEntityColumn -> !stateEntityColumn.getKey().equals(EDIT_COLUMN))
-                                    .withFileName(fileName)
-                                    .withColumnConfigurationBuilder(new ColumnConfigurationBuilder())
-                                    .open();
-                        }
-                )
+        Button exportButton = new Button(
+                "Export",
+                FontAwesome.Solid.FILE_EXPORT.create(),
+                e -> {
+                    int size = crud.getDataProvider().size(new Query<>());
+                    if (size > 0) {
+                        String fileName = "District";
+                        GridExporter.newWithDefaults(crud.getGrid())
+                                //Removing Edit Column For Export
+                                .withColumnFilter(stateEntityColumn -> !stateEntityColumn.getKey().equals(EDIT_COLUMN))
+                                .withFileName(fileName)
+                                .withColumnConfigurationBuilder(new ColumnConfigurationBuilder())
+                                .open();
+                    }
+                }
         );
+        exportButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
+        horizontalLayout.add(exportButton);
         horizontalLayout.setWidthFull();
         horizontalLayout.setJustifyContentMode(JustifyContentMode.END);
         horizontalLayout.setAlignItems(Alignment.CENTER);

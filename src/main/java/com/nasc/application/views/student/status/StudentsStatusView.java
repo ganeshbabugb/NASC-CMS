@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 @PageTitle("Students Status")
 @Route(value = "students-status", layout = MainLayout.class)
@@ -63,6 +64,7 @@ public class StudentsStatusView extends VerticalLayout {
     private Grid<User> grid;
     private GridListDataView<User> gridListDataView;
     private Grid.Column<User> userColumn;
+    private Grid.Column<User> RegisterNumberColumn;
     private final Button searchButton;
     private ComboBox<AcademicYearEntity> academicYearFilter;
     private ComboBox<DepartmentEntity> departmentFilter;
@@ -177,14 +179,33 @@ public class StudentsStatusView extends VerticalLayout {
         refreshGridData();
     }
 
+    private static Component createFilterFilter(Consumer<String> filterChangeConsumer) {
+        TextField textField = new TextField();
+        textField.setValueChangeMode(ValueChangeMode.EAGER);
+        textField.setClearButtonVisible(true);
+        textField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        textField.setWidthFull();
+        textField.getStyle().set("max-width", "100%");
+        // CASE IN SENSITIVE
+        textField.addValueChangeListener(e -> filterChangeConsumer.accept(e.getValue().toLowerCase()));
+        return textField;
+    }
+
     private void addFiltersToGrid() {
         HeaderRow filterRow = grid.appendHeaderRow();
 
         // Username filter
-        TextField userFilter = createTextFilter();
-        userFilter.addValueChangeListener(event -> gridListDataView
-                .addFilter(user -> StringUtils.containsIgnoreCase(user.getUsername(), userFilter.getValue())));
-        filterRow.getCell(userColumn).setComponent(userFilter);
+        filterRow.getCell(userColumn)
+                .setComponent(createFilterFilter(name -> gridListDataView.setFilter(user -> user
+                        .getUsername()
+                        .toLowerCase()
+                        .contains(name))));
+
+        filterRow.getCell(RegisterNumberColumn)
+                .setComponent(createFilterFilter(name -> gridListDataView.setFilter(user -> user
+                        .getRegisterNumber()
+                        .toLowerCase()
+                        .contains(name))));
 
         // Status filters
         addStatusFilter("Personal Details", "personalDetailsCompleted", filterRow);
@@ -194,16 +215,6 @@ public class StudentsStatusView extends VerticalLayout {
         ComboBox<String> allFormsFilter = createAllFormsFilter();
         allFormsFilter.addValueChangeListener(this::handleAllFormsFilterChange);
         filterRow.getCell(grid.getColumnByKey("allFormsCompleted")).setComponent(allFormsFilter);
-    }
-
-    private TextField createTextFilter() {
-        TextField filter = new TextField();
-        filter.setPlaceholder("Filter");
-        filter.setClearButtonVisible(true);
-        filter.setWidth("100%");
-        filter.setValueChangeMode(ValueChangeMode.EAGER);
-        filter.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        return filter;
     }
 
     private void addStatusFilter(String columnName, String propertyKey, HeaderRow filterRow) {
@@ -306,6 +317,7 @@ public class StudentsStatusView extends VerticalLayout {
 
     private void addColumnsToGrid() {
         createUsernameColumn();
+        createRegisterNumberColumn();
         createPersonalDetailsColumn();
         createAddressDetailsColumn();
         createBankDetailsColumn();
@@ -313,7 +325,19 @@ public class StudentsStatusView extends VerticalLayout {
     }
 
     private void createUsernameColumn() {
-        userColumn = grid.addColumn(User::getUsername).setHeader("Username").setKey("username").setComparator((User::getUsername));
+        userColumn = grid.addColumn(User::getUsername)
+                .setHeader("Username")
+                .setKey("username")
+                .setFrozen(true)
+                .setComparator((User::getUsername));
+    }
+
+    private void createRegisterNumberColumn() {
+        RegisterNumberColumn = grid.addColumn(User::getRegisterNumber)
+                .setHeader("Register Number")
+                .setKey("Register Number")
+                .setFrozen(true)
+                .setComparator((User::getRegisterNumber));
     }
 
     private void createPersonalDetailsColumn() {

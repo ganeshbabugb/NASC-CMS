@@ -10,6 +10,7 @@ import com.nasc.application.services.dataprovider.GenericDataProvider;
 import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.crud.BinderCrudEditor;
 import com.vaadin.flow.component.crud.Crud;
@@ -21,6 +22,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -47,20 +49,24 @@ public class CreateSubjectCrud extends VerticalLayout {
         createGrid();
         setupDataProvider();
         HorizontalLayout horizontalLayout = new HorizontalLayout();
-        horizontalLayout.add(
-                new Button(
-                        "Export",
-                        FontAwesome.Solid.FILE_EXPORT.create(),
-                        e -> {
-                            String fileName = "Department Subjects";
-                            GridExporter.newWithDefaults(crud.getGrid())
-                                    //Removing Edit Column For Export
-                                    .withColumnFilter(stateEntityColumn -> !stateEntityColumn.getKey().equals(EDIT_COLUMN))
-                                    .withFileName(fileName)
-                                    .withColumnConfigurationBuilder(new ColumnConfigurationBuilder())
-                                    .open();
-                        }
-                ));
+        Button exportButton = new Button(
+                "Export",
+                FontAwesome.Solid.FILE_EXPORT.create(),
+                e -> {
+                    int size = crud.getGrid().getDataProvider().size(new Query<>());
+                    if (size > 0) {
+                        String fileName = "Department Subjects";
+                        GridExporter.newWithDefaults(crud.getGrid())
+                                //Removing Edit Column For Export
+                                .withColumnFilter(stateEntityColumn -> !stateEntityColumn.getKey().equals(EDIT_COLUMN))
+                                .withFileName(fileName)
+                                .withColumnConfigurationBuilder(new ColumnConfigurationBuilder())
+                                .open();
+                    }
+                }
+        );
+        exportButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
+        horizontalLayout.add(exportButton);
         horizontalLayout.setWidthFull();
         horizontalLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
         horizontalLayout.setAlignItems(FlexComponent.Alignment.CENTER);

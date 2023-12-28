@@ -35,6 +35,7 @@ import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.theme.lumo.LumoIcon;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -308,7 +309,7 @@ public class CreateUsers extends VerticalLayout {
 
     private void downloadSampleCsv() {
         String sampleCsvContent = "username,registerNumber,email,password\nganesh,2122k1466,ganesh@mail.com,password123";
-        Button button = new Button("Download Sample CSV");
+        Button button = new Button("Download Sample CSV", LumoIcon.DOWNLOAD.create());
         FileDownloadWrapper buttonWrapper = new FileDownloadWrapper(
                 new StreamResource("sample.csv", () -> new ByteArrayInputStream(sampleCsvContent.getBytes())));
         buttonWrapper.wrapComponent(button);

@@ -1,6 +1,6 @@
 package com.nasc.application.views.student;
 
-import com.nasc.application.data.model.SamplePerson;
+import com.nasc.application.data.core.SamplePerson;
 import com.nasc.application.services.SamplePersonService;
 import com.nasc.application.utils.NotificationUtils;
 import com.nasc.application.views.MainLayout;

@@ -42,6 +42,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
@@ -122,55 +123,55 @@ public class MarksView extends VerticalLayout {
         searchButton.addClickListener(e -> updateGridData());
         searchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
-        menuButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        menuButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
         HorizontalLayout FilterLayout = new HorizontalLayout();
 
         FilterLayout.setAlignItems(Alignment.BASELINE);
         FilterLayout.add(departmentComboBox, academicYearComboBox, semesterComboBox, examTypeComboBox, studentSectionComboBox, searchButton);
 
-        HorizontalLayout horizontalLayout = new HorizontalLayout(menuButton,
-                new Button("Export",
-                        FontAwesome.Solid.FILE_EXPORT.create(),
-                        e -> {
-                            ExamType selectedExamType = examTypeComboBox.getValue();
-                            Semester selectedSemester = semesterComboBox.getValue();
-                            DepartmentEntity selectedDepartment = departmentComboBox.getValue();
-                            AcademicYearEntity selectedAcademicYear = academicYearComboBox.getValue();
-                            StudentSection studentSection = studentSectionComboBox.getValue();
+        Button exportButton = new Button("Export",
+                FontAwesome.Solid.FILE_EXPORT.create(),
+                e -> {
+                    ExamType selectedExamType = examTypeComboBox.getValue();
+                    Semester selectedSemester = semesterComboBox.getValue();
+                    DepartmentEntity selectedDepartment = departmentComboBox.getValue();
+                    AcademicYearEntity selectedAcademicYear = academicYearComboBox.getValue();
+                    StudentSection studentSection = studentSectionComboBox.getValue();
 
-                            // Check Grid and Filter Before Export
-                            if (!isFilterInValid() && dataProvider != null) {
-                                String fileName = selectedDepartment.getShortName()
-                                        + "_"
-                                        + selectedAcademicYear.getStartYear() + "-" + selectedAcademicYear.getEndYear()
-                                        + "_"
-                                        + studentSection.getDisplayName()
-                                        + "_"
-                                        + selectedSemester.getDisplayName()
-                                        + "_"
-                                        + selectedExamType.getDisplayName() + "_Marks";
+                    // Check Grid and Filter Before Export
+                    int size = marksGrid.getDataProvider().size(new Query<>());
+                    if (!isFilterInValid() && size > 0) {
+                        String fileName = selectedDepartment.getShortName()
+                                + "_"
+                                + selectedAcademicYear.getStartYear() + "-" + selectedAcademicYear.getEndYear()
+                                + "_"
+                                + studentSection.getDisplayName()
+                                + "_"
+                                + selectedSemester.getDisplayName()
+                                + "_"
+                                + selectedExamType.getDisplayName() + "_Marks";
 
-                                XlsxFormat xlsxFormat = new XlsxFormat();
-                                PdfFormat pdfFormat = new PdfFormat();
-                                HtmlFormat htmlFormat = new HtmlFormat();
+                        XlsxFormat xlsxFormat = new XlsxFormat();
+                        PdfFormat pdfFormat = new PdfFormat();
+                        HtmlFormat htmlFormat = new HtmlFormat();
 
-                                gridExporter = GridExporter
-                                        .newWithDefaults(marksGrid)
-                                        .withFileName(fileName)
-                                        // Ignoring chart column
-                                        .withColumnFilter(studentMarksDTOColumn ->
-                                                studentMarksDTOColumn.isVisible() &&
-                                                        !studentMarksDTOColumn.getKey().equals("Chart"))
-                                        .withAvailableFormats(xlsxFormat, pdfFormat, htmlFormat)
-                                        .withPreSelectedFormat(xlsxFormat)
-                                        .withColumnConfigurationBuilder(new ColumnConfigurationBuilder());
+                        gridExporter = GridExporter
+                                .newWithDefaults(marksGrid)
+                                .withFileName(fileName)
+                                // Ignoring chart column
+                                .withColumnFilter(studentMarksDTOColumn ->
+                                        studentMarksDTOColumn.isVisible() &&
+                                                !studentMarksDTOColumn.getKey().equals("Chart"))
+                                .withAvailableFormats(xlsxFormat, pdfFormat, htmlFormat)
+                                .withPreSelectedFormat(xlsxFormat)
+                                .withColumnConfigurationBuilder(new ColumnConfigurationBuilder());
 
-                                gridExporter.open();
-                            } else {
-                                NotificationUtils.showErrorNotification("Please select values for all the filters!");
-                            }
-                        }
-                ));
+                        gridExporter.open();
+                    }
+                }
+        );
+        exportButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
+        HorizontalLayout horizontalLayout = new HorizontalLayout(menuButton, exportButton);
         horizontalLayout.setWidthFull();
         horizontalLayout.setJustifyContentMode(JustifyContentMode.END);
         horizontalLayout.setAlignItems(Alignment.CENTER);

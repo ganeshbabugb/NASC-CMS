@@ -266,6 +266,7 @@
                         </configuration>
                     </plugin>
                 </plugins>
+                <finalName>nasc-cms-application</finalName>
             </build>
         </profile>
 

@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     tools {
+        // Define Maven tool with version 3.9.6
         maven 'maven_3_9_6'
     }
 
@@ -23,10 +24,7 @@ pipeline {
             steps {
                 // Set environment variables for deployment
                 withEnv(['DB_USERNAME=admin', 'DB_PASSWORD=password', 'PORT=8081']) {
-                    // Display a message indicating the deployment is starting
                     sh 'echo "Deploying the application"'
-
-                    // Run the Java application with specified parameters
                     sh 'java -jar -Dspring.profiles.active=prod target/nasc-cms-application.jar'
                 }
             }

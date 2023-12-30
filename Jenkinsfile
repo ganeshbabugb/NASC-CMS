@@ -2,7 +2,10 @@ pipeline {
     agent any
 
     tools {
+<<<<<<<<< Temporary merge branch 1
         // Define Maven tool with version 3.9.6
+=========
+>>>>>>>>> Temporary merge branch 2
         maven 'maven_3_9_6'
     }
 
@@ -19,15 +22,33 @@ pipeline {
                 sh 'mvn clean package -Pproduction -Dvaadin.force.production.build=true'
             }
         }
+<<<<<<<<< Temporary merge branch 1
+    }
+
+   stage('Deploy') {
+        steps {
+            // Set environment variables for deployment
+            withEnv(['DB_USERNAME=admin', 'DB_PASSWORD=password', 'PORT=8081']) {
+                sh 'echo "Deploying the application"'
+                sh 'java -jar -Dspring.profiles.active=prod target/nasc-cms-application.jar'
+            }
+        }
+    }
+
+=========
 
         stage('Deploy') {
             steps {
                 // Set environment variables for deployment
                 withEnv(['DB_USERNAME=admin', 'DB_PASSWORD=password', 'PORT=8081']) {
+                    // Display a message indicating the deployment is starting
                     sh 'echo "Deploying the application"'
-                    sh 'sudo java -jar -Dspring.profiles.active=prod target/nasc-cms-application.jar'
+
+                    // Run the Java application with specified parameters
+                    sh 'java -jar -Dspring.profiles.active=prod target/nasc-cms-application.jar'
                 }
             }
         }
     }
+>>>>>>>>> Temporary merge branch 2
 }

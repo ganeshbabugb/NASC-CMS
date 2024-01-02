@@ -42,8 +42,12 @@ public class GenericDataProvider<T extends BaseEntity> extends AbstractBackEndDa
     }
 
     public void delete(T item) {
-        DATABASE.removeIf(entity -> entity.getId().equals(item.getId()));
-        serviceClass.delete(item);
+        try {
+            serviceClass.delete(item);
+            DATABASE.removeIf(entity -> entity.getId().equals(item.getId()));
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
     public void setSizeChangeListener(Consumer<Long> listener) {

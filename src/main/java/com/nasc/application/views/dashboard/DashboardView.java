@@ -40,5 +40,4 @@ public class DashboardView extends Main {
         layout.setSpacing(false);
         return layout;
     }
-
 }

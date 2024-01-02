@@ -72,14 +72,6 @@ public class SubjectEntity implements BaseEntity {
         this.subjectShortForm = subjectShortForm;
     }
 
-    public PaperType getTypeOfPaper() {
-        return paperType;
-    }
-
-    public void setTypeOfPaper(PaperType paperType) {
-        this.paperType = paperType;
-    }
-
     public MajorOfPaper getMajorOfPaper() {
         return majorOfPaper;
     }

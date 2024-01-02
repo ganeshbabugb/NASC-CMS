@@ -28,6 +28,7 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -98,7 +99,12 @@ public class StudentsStatusView extends VerticalLayout {
         searchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
         searchButton.addClickListener(buttonClickEvent -> handleAcademicYearFilterChange());
 
-        filterLayout.add(departmentFilter, academicYearFilter, studentSectionFilter, searchButton);
+        FlexLayout searchButtonLayout = new FlexLayout(searchButton);
+        searchButtonLayout.setJustifyContentMode(JustifyContentMode.END);
+        filterLayout.setWidthFull();
+        filterLayout.expand(searchButtonLayout);
+        filterLayout.add(departmentFilter, academicYearFilter, studentSectionFilter, searchButtonLayout);
+
         add(filterLayout, exportAndColumnListLayout, grid);
     }
 
@@ -126,14 +132,13 @@ public class StudentsStatusView extends VerticalLayout {
         exportAndColumnListLayout.setJustifyContentMode(JustifyContentMode.END);
         exportAndColumnListLayout.setAlignItems(Alignment.CENTER);
         exportAndColumnListLayout.setSpacing(true);
-        exportAndColumnListLayout.getElement().getStyle().set("margin-bottom", "1em");
     }
 
     private Anchor createDownloadLink() {
         Anchor link = new Anchor();
         link.getElement().setAttribute("download", true);
         Button exportButton = new Button("Export to CSV", FontAwesome.Solid.FILE_EXPORT.create());
-        exportButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
+        exportButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY_INLINE);
         link.add(exportButton);
         return link;
     }
@@ -185,7 +190,6 @@ public class StudentsStatusView extends VerticalLayout {
         textField.setClearButtonVisible(true);
         textField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         textField.setWidthFull();
-        textField.getStyle().set("max-width", "100%");
         // CASE IN SENSITIVE
         textField.addValueChangeListener(e -> filterChangeConsumer.accept(e.getValue().toLowerCase()));
         return textField;

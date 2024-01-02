@@ -202,17 +202,17 @@ public class MarkEntryView extends Div {
     }
 
     // HELPER
-    private static Checkbox getCheckbox(NumberField studentTextField) {
+    private static Checkbox getCheckbox(NumberField studentMarkField) {
         Checkbox absentCheckbox = new Checkbox("Absent");
         absentCheckbox.addValueChangeListener(event -> {
             if (event.getValue()) {
                 // If absent, set text field to 0.0 and make it read-only
-                studentTextField.setValue(0.0);
-                studentTextField.setReadOnly(true);
+                studentMarkField.setValue(0.0);
+                studentMarkField.setReadOnly(true);
             } else {
                 // If not absent, clear the text field and make it editable
-                studentTextField.clear();
-                studentTextField.setReadOnly(false);
+                studentMarkField.clear();
+                studentMarkField.setReadOnly(false);
             }
         });
         return absentCheckbox;
@@ -245,7 +245,9 @@ public class MarkEntryView extends Div {
         examTypeComboBox.setItemLabelGenerator(ExamType::getDisplayName);
 
         minMarksNumberField = new NumberField("Minimum Marks");
+        minMarksNumberField.setStep(0.50);
         maxMarksNumberField = new NumberField("Maximum Marks");
+        maxMarksNumberField.setStep(0.50);
 
         portionCoveredNumberField = new NumberField("Portion Covered");
 
@@ -307,8 +309,8 @@ public class MarkEntryView extends Div {
             subjectCodeTextField.setValue(selectedSubject.getSubjectCode());
 
             // Added toSting because value ENUM
-            majorTextField.setValue(selectedSubject.getMajorOfPaper().toString());
-            typeOfPaperTextField.setValue(selectedSubject.getTypeOfPaper().toString());
+            majorTextField.setValue(selectedSubject.getMajorOfPaper().getDisplayName());
+            typeOfPaperTextField.setValue(selectedSubject.getPaperType().getDisplayName());
         } else {
             subjectShortFormTextField.clear();
             majorTextField.clear();
@@ -545,7 +547,7 @@ public class MarkEntryView extends Div {
                 + " - " + exam.getSubject().getSubjectShortForm()
                 + " - " + exam.getSubject().getSubjectCode()
                 + " - " + exam.getSubject().getMajorOfPaper().getDisplayName()
-                + " - " + exam.getSubject().getTypeOfPaper().getDisplayName();
+                + " - " + exam.getSubject().getPaperType().getDisplayName();
         H4 subjectTittle = new H4(subjectDetails);
         secondaryLayout.add(examTittle, subjectTittle);
 
@@ -553,17 +555,18 @@ public class MarkEntryView extends Div {
         students.forEach(student -> {
             String username = student.getUsername();
             String registerNumber = student.getRegisterNumber();
-            NumberField studentTextField = new NumberField(username + " [" + registerNumber + "]");
-            studentTextField.setPlaceholder("Enter marks");
+            NumberField studentMarkField = new NumberField(username + " [" + registerNumber + "]");
+            studentMarkField.setStep(0.05);
+            studentMarkField.setPlaceholder("Enter marks");
 
-            Checkbox absentCheckbox = getCheckbox(studentTextField);
+            Checkbox absentCheckbox = getCheckbox(studentMarkField);
 
             Button saveButton = new Button("Save");
             saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
             // Inside updateStudentFieldsForExam method
             saveButton.addClickListener(event -> {
-                boolean marksSaved = saveMarksForStudent(student, studentTextField, absentCheckbox);
+                boolean marksSaved = saveMarksForStudent(student, studentMarkField, absentCheckbox);
 
                 // Update the button text based on whether marks were saved or updated
                 if (marksSaved) {
@@ -579,7 +582,7 @@ public class MarkEntryView extends Div {
 
             if (existingMarksEntity != null) {
                 // Set the initial value of the NumberField to existing marks
-                studentTextField.setValue(existingMarksEntity.getMarksObtained());
+                studentMarkField.setValue(existingMarksEntity.getMarksObtained());
                 saveButton.setText("Update");
             }
 
@@ -587,12 +590,12 @@ public class MarkEntryView extends Div {
 
             // Set text field to 0.0 and read-only if the student is absent
             if (absentCheckbox.getValue()) {
-                studentTextField.setValue(0.0);
-                studentTextField.setReadOnly(true);
+                studentMarkField.setValue(0.0);
+                studentMarkField.setReadOnly(true);
             }
 
             // Create a "Save" button for each student
-            FormLayout studentLayout = new FormLayout(studentTextField, absentCheckbox, saveButton);
+            FormLayout studentLayout = new FormLayout(studentMarkField, absentCheckbox, saveButton);
 
             secondaryLayout.add(studentLayout);
         });

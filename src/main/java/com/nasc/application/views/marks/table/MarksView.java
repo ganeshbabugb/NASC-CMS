@@ -115,6 +115,7 @@ public class MarksView extends VerticalLayout {
         marksGrid.setMultiSort(true);
         marksGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_COLUMN_BORDERS);
         marksGrid.addThemeVariants(GridProVariant.LUMO_ROW_STRIPES);
+        // marksGrid.setAllRowsVisible(true); // TO AVOID SCROLLER DISPLAY ALL THE ROWS
 
         headerRow = marksGrid.appendHeaderRow();
 
@@ -124,10 +125,16 @@ public class MarksView extends VerticalLayout {
         searchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
         menuButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
-        HorizontalLayout FilterLayout = new HorizontalLayout();
-
-        FilterLayout.setAlignItems(Alignment.BASELINE);
-        FilterLayout.add(departmentComboBox, academicYearComboBox, semesterComboBox, examTypeComboBox, studentSectionComboBox, searchButton);
+        HorizontalLayout filterLayout = new HorizontalLayout();
+        filterLayout.setAlignItems(Alignment.BASELINE);
+        filterLayout.add(
+                departmentComboBox,
+                academicYearComboBox,
+                semesterComboBox,
+                examTypeComboBox,
+                studentSectionComboBox,
+                searchButton
+        );
 
         Button exportButton = new Button("Export",
                 FontAwesome.Solid.FILE_EXPORT.create(),
@@ -176,7 +183,7 @@ public class MarksView extends VerticalLayout {
         horizontalLayout.setJustifyContentMode(JustifyContentMode.END);
         horizontalLayout.setAlignItems(Alignment.CENTER);
 
-        add(new H3("Marks View"), FilterLayout, horizontalLayout, marksGrid);
+        add(new H3("Marks View"), filterLayout, horizontalLayout, marksGrid);
 
         setSizeFull();
     }
@@ -195,7 +202,6 @@ public class MarksView extends VerticalLayout {
         textField.setClearButtonVisible(true);
         textField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         textField.setWidthFull();
-        textField.getStyle().set("max-width", "100%");
         // CASE IN SENSITIVE
         textField.addValueChangeListener(e -> filterChangeConsumer.accept(e.getValue().toLowerCase()));
         return textField;
@@ -307,6 +313,12 @@ public class MarksView extends VerticalLayout {
                 selectedAcademicYear,
                 studentSection
         );
+
+        // Check if there is no data
+        if (allStudents == null || allStudents.isEmpty()) {
+            NotificationUtils.showErrorNotification("No data available.");
+            return;
+        }
 
         List<StudentMarksDTO> allStudentMarks = new ArrayList<>();
 
@@ -537,6 +549,7 @@ public class MarksView extends VerticalLayout {
     private void setupColumns(List<SubjectEntity> subjects) {
         for (SubjectEntity subject : subjects) {
             NumberField markField = new NumberField();
+            markField.setStep(0.50);
             markField.setValue(0.0); // Default value for the fields
             markField.setWidthFull();
 

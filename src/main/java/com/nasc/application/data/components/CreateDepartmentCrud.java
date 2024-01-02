@@ -18,13 +18,17 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoIcon;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import software.xdev.vaadin.grid_exporter.GridExporter;
 import software.xdev.vaadin.grid_exporter.column.ColumnConfigurationBuilder;
 
 @Component
 @UIScope
+@Slf4j
 public class CreateDepartmentCrud extends VerticalLayout {
 
     private final String EDIT_COLUMN = "vaadin-crud-edit-column";
@@ -58,6 +62,15 @@ public class CreateDepartmentCrud extends VerticalLayout {
         horizontalLayout.setJustifyContentMode(JustifyContentMode.END);
         horizontalLayout.setAlignItems(Alignment.CENTER);
         horizontalLayout.add(exportButton);
+
+        Button newItemBtn = new Button("Create New Department", LumoIcon.PLUS.create());
+        newItemBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        crud.setNewButton(newItemBtn);
+
+        setAlignItems(Alignment.STRETCH);
+        expand(crud);
+        setSizeFull();
+
         add(horizontalLayout, crud);
     }
 
@@ -93,8 +106,15 @@ public class CreateDepartmentCrud extends VerticalLayout {
                 new GenericDataProvider<>(DepartmentEntity.class, service);
         crud.setDataProvider(genericDataProvider);
         crud.addDeleteListener(deleteEvent -> {
-            genericDataProvider.delete(deleteEvent.getItem());
-            NotificationUtils.showSuccessNotification("Department Deleted Successfully");
+            try {
+                genericDataProvider.delete(deleteEvent.getItem());
+                NotificationUtils.showSuccessNotification("Department Deleted Successfully");
+            } catch (DataIntegrityViolationException e) {
+                NotificationUtils.showErrorNotification("Cannot delete the department because it has associated records.");
+            } catch (Exception e) {
+                log.error(e.getMessage());
+                NotificationUtils.showInfoNotification("An unexpected error occurred during deletion.");
+            }
         });
         crud.addSaveListener(saveEvent -> {
             genericDataProvider.persist(saveEvent.getItem());

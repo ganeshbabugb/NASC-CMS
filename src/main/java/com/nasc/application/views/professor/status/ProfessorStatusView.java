@@ -25,6 +25,7 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -81,7 +82,12 @@ public class ProfessorStatusView extends VerticalLayout {
 
         createSearchButton();
 
-        filterLayout.add(departmentFilter, searchButton);
+        FlexLayout searchButtonLayout = new FlexLayout(searchButton);
+        searchButtonLayout.setJustifyContentMode(JustifyContentMode.END);
+        filterLayout.setWidthFull();
+        filterLayout.expand(searchButtonLayout);
+        filterLayout.add(departmentFilter, searchButtonLayout);
+
         add(filterLayout, menuButtonLayout, grid);
     }
 
@@ -128,7 +134,7 @@ public class ProfessorStatusView extends VerticalLayout {
         Anchor link = new Anchor();
         link.getElement().setAttribute("download", true);
         Button exportButton = new Button("Export to CSV", FontAwesome.Solid.FILE_EXPORT.create());
-        exportButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
+        exportButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY_INLINE);
         link.add(exportButton);
         return link;
     }
@@ -162,7 +168,7 @@ public class ProfessorStatusView extends VerticalLayout {
         TextField filter = new TextField();
         filter.setPlaceholder("Filter");
         filter.setClearButtonVisible(true);
-        filter.setWidth("100%");
+        filter.setWidthFull();
         filter.setValueChangeMode(ValueChangeMode.EAGER);
         filter.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         return filter;

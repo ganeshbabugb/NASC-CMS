@@ -23,14 +23,19 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.Query;
+import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoIcon;
 import jakarta.annotation.security.RolesAllowed;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import software.xdev.vaadin.grid_exporter.GridExporter;
 import software.xdev.vaadin.grid_exporter.column.ColumnConfigurationBuilder;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Component
 @UIScope
@@ -70,6 +75,15 @@ public class CreateSubjectCrud extends VerticalLayout {
         horizontalLayout.setWidthFull();
         horizontalLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
         horizontalLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+
+        Button newItemBtn = new Button("Create New Subject", LumoIcon.PLUS.create());
+        newItemBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        crud.setNewButton(newItemBtn);
+
+        setAlignItems(Alignment.STRETCH);
+        expand(crud);
+        setSizeFull();
+
         add(horizontalLayout, crud);
     }
 
@@ -104,7 +118,7 @@ public class CreateSubjectCrud extends VerticalLayout {
         binder.forField(subjectNameField).asRequired().bind(SubjectEntity::getSubjectName, SubjectEntity::setSubjectName);
         binder.forField(subjectCodeField).bind(SubjectEntity::getSubjectCode, SubjectEntity::setSubjectCode);
         binder.forField(subjectShortNameField).asRequired().bind(SubjectEntity::getSubjectShortForm, SubjectEntity::setSubjectShortForm);
-        binder.forField(typeOfPaperComboBox).bind(SubjectEntity::getTypeOfPaper, SubjectEntity::setTypeOfPaper);
+        binder.forField(typeOfPaperComboBox).bind(SubjectEntity::getPaperType, SubjectEntity::setPaperType);
         binder.forField(majorOfPaperComboBox).bind(SubjectEntity::getMajorOfPaper, SubjectEntity::setMajorOfPaper);
         binder.forField(semesterComboBox).bind(SubjectEntity::getSemester, SubjectEntity::setSemester);
 
@@ -117,9 +131,18 @@ public class CreateSubjectCrud extends VerticalLayout {
 
         grid.removeColumnByKey("id");
         grid.removeColumnByKey("department");
+
+        String[] columns = {"subjectName", "subjectShortForm", "subjectCode", "paperType", "majorOfPaper", "semester", EDIT_COLUMN};
+        List<Grid.Column<SubjectEntity>> list = Arrays.stream(columns).map(grid::getColumnByKey).toList();
+        grid.setColumnOrder(list);
+
         grid.getColumnByKey(EDIT_COLUMN).setHeader("Edit");
         grid.getColumnByKey(EDIT_COLUMN).setWidth("100px");
         grid.getColumnByKey(EDIT_COLUMN).setResizable(false);
+
+        grid.getColumnByKey("paperType").setRenderer(new TextRenderer<>(item -> item.getPaperType().getDisplayName()));
+        grid.getColumnByKey("majorOfPaper").setRenderer(new TextRenderer<>(item -> item.getMajorOfPaper().getDisplayName()));
+        grid.getColumnByKey("semester").setRenderer(new TextRenderer<>(item -> item.getSemester().getDisplayName()));
     }
 
     private void setupDataProvider() {

@@ -18,6 +18,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.theme.lumo.LumoIcon;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import software.xdev.vaadin.grid_exporter.GridExporter;
@@ -59,6 +60,15 @@ public class CreateCountryCrud extends VerticalLayout {
         horizontalLayout.setWidthFull();
         horizontalLayout.setJustifyContentMode(JustifyContentMode.END);
         horizontalLayout.setAlignItems(Alignment.CENTER);
+
+        Button newItemBtn = new Button("Create New Country", LumoIcon.PLUS.create());
+        newItemBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        crud.setNewButton(newItemBtn);
+
+        setAlignItems(Alignment.STRETCH);
+        expand(crud);
+        setSizeFull();
+
         add(horizontalLayout, crud);
     }
 

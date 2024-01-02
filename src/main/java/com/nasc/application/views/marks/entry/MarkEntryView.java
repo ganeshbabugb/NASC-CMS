@@ -245,7 +245,9 @@ public class MarkEntryView extends Div {
         examTypeComboBox.setItemLabelGenerator(ExamType::getDisplayName);
 
         minMarksNumberField = new NumberField("Minimum Marks");
+        minMarksNumberField.setStep(0.50);
         maxMarksNumberField = new NumberField("Maximum Marks");
+        maxMarksNumberField.setStep(0.50);
 
         portionCoveredNumberField = new NumberField("Portion Covered");
 
@@ -308,7 +310,7 @@ public class MarkEntryView extends Div {
 
             // Added toSting because value ENUM
             majorTextField.setValue(selectedSubject.getMajorOfPaper().toString());
-            typeOfPaperTextField.setValue(selectedSubject.getTypeOfPaper().toString());
+            typeOfPaperTextField.setValue(selectedSubject.getPaperType().toString());
         } else {
             subjectShortFormTextField.clear();
             majorTextField.clear();
@@ -545,7 +547,7 @@ public class MarkEntryView extends Div {
                 + " - " + exam.getSubject().getSubjectShortForm()
                 + " - " + exam.getSubject().getSubjectCode()
                 + " - " + exam.getSubject().getMajorOfPaper().getDisplayName()
-                + " - " + exam.getSubject().getTypeOfPaper().getDisplayName();
+                + " - " + exam.getSubject().getPaperType().getDisplayName();
         H4 subjectTittle = new H4(subjectDetails);
         secondaryLayout.add(examTittle, subjectTittle);
 

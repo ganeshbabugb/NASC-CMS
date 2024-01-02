@@ -26,13 +26,14 @@ public class ValueVaultView extends Div {
             CreateAcademicYearCrud createAcademicYearCrud
     ) {
         TabSheet tabSheet = new TabSheet();
-        tabSheet.add("State", new Div(createStateCrud));
-        tabSheet.add("District", new Div(createDistrictCrud));
-        tabSheet.add("Country", new Div(createCountryCrud));
-        tabSheet.add("Blood Group", new Div(createBloodGroupCrud));
-        tabSheet.add("Department", new Div(createDepartmentCrud));
-        tabSheet.add("Academic Year", new Div(createAcademicYearCrud));
+        tabSheet.add("State", createStateCrud);
+        tabSheet.add("District", createDistrictCrud);
+        tabSheet.add("Country", createCountryCrud);
+        tabSheet.add("Blood Group", createBloodGroupCrud);
+        tabSheet.add("Department", createDepartmentCrud);
+        tabSheet.add("Academic Year", createAcademicYearCrud);
+        tabSheet.setSizeFull();
+        setSizeFull();
         add(tabSheet);
     }
-
 }
